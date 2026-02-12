@@ -1,4 +1,4 @@
-import { ExternalLink } from "lucide-react";
+import Image from "next/image";
 import { createMetadata } from "@/lib/metadata";
 import { AppHeader } from "@/components/app-header";
 import { Button } from "@/components/ui/button";
@@ -113,8 +113,11 @@ export default function SettingsPage() {
           <div className="mt-4 flex items-center justify-between rounded-lg border border-[#2a2a2a] bg-[#1a1a1a] p-4">
             <div className="flex items-center gap-3">
               <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[#2a2a2a]">
-                <ExternalLink
-                  className="h-5 w-5 text-[#525252]"
+                <Image
+                  src="/discogs-white.svg"
+                  alt=""
+                  width={24}
+                  height={24}
                   aria-hidden="true"
                 />
               </div>
@@ -132,8 +135,7 @@ export default function SettingsPage() {
           </div>
         </div>
         <div className="border-t border-[#2a2a2a] px-6 py-4">
-          <Button variant="outline" size="sm" className="gap-2 border-[#2a2a2a]">
-            <ExternalLink className="h-4 w-4" aria-hidden="true" />
+          <Button variant="outline" size="sm" className="border-[#2a2a2a]">
             Connect Discogs
           </Button>
         </div>
