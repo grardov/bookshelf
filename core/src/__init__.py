@@ -1,0 +1,1 @@
+"""Bookshelf core package."""

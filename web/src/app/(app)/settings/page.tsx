@@ -1,22 +1,95 @@
+"use client";
+
+import { useState, useEffect } from "react";
 import Image from "next/image";
-import { createMetadata } from "@/lib/metadata";
 import { AppHeader } from "@/components/app-header";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
-
-export const metadata = createMetadata({
-  title: "Settings",
-  description: "Manage your account, password, and Discogs connection",
-  path: "/settings",
-});
+import { useAuth } from "@/contexts/auth-context";
+import { updateDisplayName } from "@/lib/api/users";
 
 export default function SettingsPage() {
+  const { profile, refreshProfile } = useAuth();
+  const [displayName, setDisplayName] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState(false);
+
+  // Initialize display name from profile
+  useEffect(() => {
+    if (profile?.display_name) {
+      setDisplayName(profile.display_name);
+    }
+  }, [profile]);
+
+  const handleUpdateProfile = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsLoading(true);
+    setError(null);
+    setSuccess(false);
+
+    try {
+      await updateDisplayName(displayName);
+      await refreshProfile();
+      setSuccess(true);
+
+      // Clear success message after 3 seconds
+      setTimeout(() => setSuccess(false), 3000);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to update profile");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   return (
     <main className="flex-1 space-y-8 py-6">
       <AppHeader title="Settings" />
+
+      {/* Profile */}
+      <section className="rounded-lg border border-[#2a2a2a] bg-[#141414]">
+        <div className="p-6">
+          <h2 className="font-heading text-lg font-semibold text-white">
+            Profile
+          </h2>
+          <p className="mt-1 text-sm text-[#525252]">
+            Update your display name and profile information
+          </p>
+          <form onSubmit={handleUpdateProfile} className="mt-4 max-w-sm space-y-3">
+            <div className="space-y-2">
+              <Label htmlFor="display-name" className="text-[#9ca3af]">
+                Display name
+              </Label>
+              <Input
+                id="display-name"
+                type="text"
+                value={displayName}
+                onChange={(e) => setDisplayName(e.target.value)}
+                disabled={isLoading}
+                className="border-[#2a2a2a] bg-[#1a1a1a] text-white focus-visible:ring-primary"
+              />
+            </div>
+            {error && (
+              <p className="text-sm text-red-500">{error}</p>
+            )}
+            {success && (
+              <p className="text-sm text-green-500">Profile updated successfully!</p>
+            )}
+          </form>
+        </div>
+        <div className="border-t border-[#2a2a2a] px-6 py-4">
+          <Button
+            size="sm"
+            onClick={handleUpdateProfile}
+            disabled={isLoading || !displayName.trim()}
+          >
+            {isLoading ? "Saving..." : "Save profile"}
+          </Button>
+        </div>
+      </section>
 
       {/* Email */}
       <section className="rounded-lg border border-[#2a2a2a] bg-[#141414]">
@@ -25,9 +98,9 @@ export default function SettingsPage() {
             Email address
           </h2>
           <p className="mt-1 text-sm text-[#525252]">
-            Update the email associated with your account
+            Your email address (cannot be changed for now)
           </p>
-          <form className="mt-4 max-w-sm space-y-3">
+          <div className="mt-4 max-w-sm space-y-3">
             <div className="space-y-2">
               <Label htmlFor="email" className="text-[#9ca3af]">
                 Email
@@ -35,15 +108,12 @@ export default function SettingsPage() {
               <Input
                 id="email"
                 type="email"
-                defaultValue="user@example.com"
-                autoComplete="email"
-                className="border-[#2a2a2a] bg-[#1a1a1a] text-white focus-visible:ring-primary"
+                value={profile?.email || ""}
+                disabled
+                className="border-[#2a2a2a] bg-[#1a1a1a] text-[#525252] cursor-not-allowed"
               />
             </div>
-          </form>
-        </div>
-        <div className="border-t border-[#2a2a2a] px-6 py-4">
-          <Button size="sm">Save email</Button>
+          </div>
         </div>
       </section>
 

@@ -12,6 +12,8 @@ description = "Bookshelf API — FastAPI backend"
 requires-python = ">=3.12"
 dependencies = [
     "fastapi",
+    "python-dotenv>=1.2.1",
+    "supabase>=2.28.0",
     "uvicorn[standard]",
 ]
 

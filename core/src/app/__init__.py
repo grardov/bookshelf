@@ -1,0 +1,1 @@
+"""Bookshelf FastAPI application package."""

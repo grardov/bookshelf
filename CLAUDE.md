@@ -54,9 +54,21 @@ make release-first    # First release (no version bump)
 
 ## API endpoints (core)
 
-| Method | Path      | Description   |
-|--------|-----------|---------------|
-| GET    | `/health` | Health check  |
+| Method | Path              | Description              | Auth Required |
+|--------|-------------------|--------------------------|---------------|
+| GET    | `/health`         | Health check             | No            |
+| GET    | `/api/users/me`   | Get current user profile | Yes (JWT)     |
+| PATCH  | `/api/users/me`   | Update display name      | Yes (JWT)     |
+
+### Authentication
+
+All `/api/*` endpoints require a valid Supabase JWT token in the `Authorization` header:
+
+```
+Authorization: Bearer <jwt-token>
+```
+
+The JWT token is obtained from the Supabase session on the frontend (`session.access_token`).
 
 ## Database
 
@@ -76,6 +88,31 @@ Database schema includes:
 - `public.users` table extending `auth.users` with profile data and Discogs integration fields
 - Row Level Security (RLS) policies for user data access
 - Triggers for automatic profile creation and timestamp updates
+
+## Environment Variables
+
+### Backend (core)
+
+Create `core/.env` with Supabase credentials:
+
+```bash
+SUPABASE_URL=http://127.0.0.1:54321
+SUPABASE_SERVICE_ROLE_KEY=<from supabase status>
+```
+
+Get credentials from `supabase status` after running `supabase start` in the `db/` directory.
+
+### Frontend (web)
+
+`web/.env.local` (already configured):
+
+```bash
+NEXT_PUBLIC_SUPABASE_URL=http://127.0.0.1:54321
+NEXT_PUBLIC_SUPABASE_ANON_KEY=<anon-key>
+NEXT_PUBLIC_CORE_API_URL=http://localhost:8000
+```
+
+**Note:** `.env` files are git-ignored. Use `.env.example` files as templates.
 
 ## Testing
 
@@ -136,8 +173,8 @@ make test-coverage     # With coverage reports
 
 ### Current Test Coverage
 
-- **Web:** 32 tests covering auth infrastructure, middleware, routing, Supabase clients
-- **Core:** 2 tests covering health endpoint
+- **Web:** 32 tests covering auth infrastructure, middleware, routing, Supabase clients, UI components
+- **Core:** 11 tests covering health endpoint and user profile API (GET/PATCH endpoints with auth)
 
 ## Code style
 
