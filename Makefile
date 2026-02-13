@@ -1,8 +1,15 @@
-.PHONY: dev build lint format check install release release-first
+.PHONY: dev dev-db dev-stop build lint format check install test release release-first
 
 dev:
-	@echo "Starting core and web in parallel..."
+	@echo "Starting db, core, and web..."
+	$(MAKE) dev-db
 	$(MAKE) -j2 dev-core dev-web
+
+dev-db:
+	cd db && supabase start
+
+dev-stop:
+	cd db && supabase stop
 
 dev-core:
 	$(MAKE) -C core dev
