@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
   Home,
+  Library,
   ListMusic,
   Settings,
   LogOut,
@@ -21,6 +22,7 @@ import { Button } from "@/components/ui/button";
 
 const libraryItems = [
   { title: "Home", href: "/", icon: Home },
+  { title: "Collection", href: "/collection", icon: Library },
   { title: "Playlists", href: "/playlists", icon: ListMusic },
 ];
 
@@ -51,7 +53,7 @@ export function AppSidebar() {
             const isActive =
               item.href === "/"
                 ? pathname === "/"
-                : pathname === item.href;
+                : pathname.startsWith(item.href);
             return (
               <li key={item.title}>
                 <Link

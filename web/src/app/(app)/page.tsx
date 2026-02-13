@@ -11,13 +11,12 @@ import {
   Radio,
   Sunrise,
   PartyPopper,
-  Clock,
   Wand2,
   PenLine,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Badge } from "@/components/ui/badge";
+import { PlaylistCard } from "@/components/playlist-card";
 
 const suggestions = [
   {
@@ -269,35 +268,7 @@ export default function HomePage() {
         </div>
         <div className="space-y-2">
           {recentPlaylists.map((playlist) => (
-            <Link
-              key={playlist.id}
-              href={`/playlists/${playlist.id}`}
-              className="flex items-center gap-4 rounded-lg border border-[#2a2a2a] bg-[#141414] p-4 transition-colors hover:border-[#404040]"
-            >
-              <div className="min-w-0 flex-1">
-                <p className="truncate text-sm font-medium text-white">
-                  {playlist.title}
-                </p>
-                <p className="mt-0.5 text-xs text-[#525252]">
-                  {playlist.trackCount} tracks
-                </p>
-              </div>
-              <div className="hidden items-center gap-3 sm:flex">
-                <Badge
-                  variant="secondary"
-                  className="border-[#2a2a2a] bg-[#1a1a1a] text-[#9ca3af]"
-                >
-                  {playlist.genre}
-                </Badge>
-                <span className="flex items-center gap-1 text-xs text-[#525252]">
-                  <Clock className="h-3 w-3" aria-hidden="true" />
-                  {playlist.duration}
-                </span>
-              </div>
-              <span className="text-xs text-[#525252]">
-                {playlist.createdAt}
-              </span>
-            </Link>
+            <PlaylistCard key={playlist.id} {...playlist} />
           ))}
         </div>
       </section>

@@ -2,20 +2,14 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import {
-  ArrowLeft,
-  Play,
-  Pencil,
-  Trash2,
-  Clock,
-  MoreHorizontal,
-} from "lucide-react";
+import { ArrowLeft, Play, Pencil, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { TrackRow, TrackListHeader } from "@/components/track-row";
 import {
   Dialog,
   DialogContent,
@@ -26,12 +20,6 @@ import {
   DialogTrigger,
   DialogClose,
 } from "@/components/ui/dialog";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 
 const playlist = {
   id: "1",
@@ -291,101 +279,25 @@ export default function PlaylistDetailPage() {
 
       {/* Track list */}
       <section aria-label="Track list">
-        {/* Table header (desktop) */}
-        <div
-          className="hidden items-center gap-4 px-3 py-2 text-xs font-medium uppercase tracking-wide text-[#525252] md:flex"
-          aria-hidden="true"
-        >
-          <span className="w-8 text-center">#</span>
-          <span className="w-10" />
-          <span className="flex-1">Title</span>
-          <span className="w-40">Album</span>
-          <span className="w-14 text-center">BPM</span>
-          <span className="w-14 text-right">
-            <Clock className="ml-auto h-3 w-3" />
-          </span>
-          <span className="w-10" />
-        </div>
+        <TrackListHeader showAlbum showBpm />
         <Separator className="mb-1 hidden bg-[#2a2a2a] md:block" />
 
         <ul className="space-y-0.5" role="list">
           {tracks.map((track) => (
-            <li
+            <TrackRow
               key={track.id}
-              className="group flex items-center gap-4 rounded-md px-3 py-2.5 transition-colors hover:bg-[#141414]"
-            >
-              <span className="w-8 text-center text-sm text-[#525252]">
-                <span className="group-hover:hidden">
-                  {String(track.position).padStart(2, "0")}
-                </span>
-                <Play
-                  className="mx-auto hidden h-4 w-4 text-primary group-hover:block"
-                  aria-hidden="true"
-                />
-              </span>
-
-              {/* Cover */}
-              <div className="h-10 w-10 shrink-0 overflow-hidden rounded bg-[#1a1a1a]">
-                <div
-                  className="flex h-full w-full items-center justify-center text-[#525252]"
-                  aria-label={`Cover for ${track.album}`}
-                >
-                  <svg
-                    className="h-5 w-5"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                    aria-hidden="true"
-                  >
-                    <circle cx="12" cy="12" r="10" strokeWidth="1.5" />
-                    <circle cx="12" cy="12" r="3" strokeWidth="1.5" />
-                  </svg>
-                </div>
-              </div>
-
-              <div className="min-w-0 flex-1">
-                <p className="truncate text-sm font-medium text-white">
-                  {track.title}
-                </p>
-                <p className="truncate text-xs text-[#525252]">
-                  {track.artist}
-                </p>
-              </div>
-
-              <span className="hidden w-40 truncate text-sm text-[#525252] md:block">
-                {track.album}
-              </span>
-
-              <span className="hidden w-14 text-center text-sm text-[#525252] md:block">
-                {track.bpm}
-              </span>
-
-              <span className="w-14 text-right text-sm text-[#525252]">
-                {track.duration}
-              </span>
-
-              <div className="w-10">
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="h-8 w-8 text-[#525252] opacity-0 hover:text-white group-hover:opacity-100"
-                      aria-label={`More options for ${track.title}`}
-                    >
-                      <MoreHorizontal
-                        className="h-4 w-4"
-                        aria-hidden="true"
-                      />
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end">
-                    <DropdownMenuItem>Remove from playlist</DropdownMenuItem>
-                    <DropdownMenuItem>View on Discogs</DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
-              </div>
-            </li>
+              {...track}
+              menuItems={[
+                {
+                  label: "Remove from playlist",
+                  onClick: () => console.log("Remove", track.id),
+                },
+                {
+                  label: "View on Discogs",
+                  onClick: () => console.log("View on Discogs", track.id),
+                },
+              ]}
+            />
           ))}
         </ul>
       </section>

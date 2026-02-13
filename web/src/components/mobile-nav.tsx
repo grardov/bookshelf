@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Home, ListMusic, Settings, Menu, X } from "lucide-react";
+import { Home, Library, ListMusic, Settings, Menu, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger, SheetTitle } from "@/components/ui/sheet";
@@ -10,6 +10,7 @@ import { useState } from "react";
 
 const navItems = [
   { title: "Home", href: "/", icon: Home },
+  { title: "Collection", href: "/collection", icon: Library },
   { title: "Playlists", href: "/playlists", icon: ListMusic },
   { title: "Settings", href: "/settings", icon: Settings },
 ];
