@@ -9,7 +9,7 @@ import { Sheet, SheetContent, SheetTrigger, SheetTitle } from "@/components/ui/s
 import { useState } from "react";
 
 const navItems = [
-  { title: "Home", href: "/", icon: Home },
+  { title: "Create", href: "/create", icon: Home },
   { title: "Collection", href: "/collection", icon: Library },
   { title: "Playlists", href: "/playlists", icon: ListMusic },
   { title: "Settings", href: "/settings", icon: Settings },
@@ -21,7 +21,7 @@ export function MobileNav() {
 
   return (
     <div className="sticky top-0 z-50 flex items-center justify-between border-b border-[#2a2a2a] bg-[#0a0a0a] px-4 py-3 md:hidden">
-      <Link href="/" className="font-heading text-lg font-bold italic text-white">
+      <Link href="/create" className="font-heading text-lg font-bold italic text-white">
         Bookshelf.
       </Link>
       <Sheet open={open} onOpenChange={setOpen}>
@@ -48,10 +48,7 @@ export function MobileNav() {
           <nav className="px-3" aria-label="Mobile navigation">
             <ul className="space-y-0.5">
               {navItems.map((item) => {
-                const isActive =
-                  item.href === "/"
-                    ? pathname === "/"
-                    : pathname.startsWith(item.href);
+                const isActive = pathname.startsWith(item.href);
                 return (
                   <li key={item.title}>
                     <Link

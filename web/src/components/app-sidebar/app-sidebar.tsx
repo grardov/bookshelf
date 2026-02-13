@@ -11,7 +11,8 @@ import {
   List,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { useAuth } from "@/contexts/auth-context";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -21,7 +22,7 @@ import {
 import { Button } from "@/components/ui/button";
 
 const libraryItems = [
-  { title: "Home", href: "/", icon: Home },
+  { title: "Create", href: "/create", icon: Home },
   { title: "Collection", href: "/collection", icon: Library },
   { title: "Playlists", href: "/playlists", icon: ListMusic },
 ];
@@ -33,12 +34,27 @@ const userPlaylists = [
 
 export function AppSidebar() {
   const pathname = usePathname();
+  const { profile, signOut } = useAuth();
+
+  const getInitials = () => {
+    if (profile?.display_name) {
+      return profile.display_name.slice(0, 2).toUpperCase();
+    }
+    if (profile?.email) {
+      return profile.email.slice(0, 1).toUpperCase();
+    }
+    return "U";
+  };
+
+  const handleLogout = async () => {
+    await signOut();
+  };
 
   return (
     <aside className="fixed inset-y-0 left-0 z-40 hidden w-56 flex-col border-r border-[#2a2a2a] bg-[#0a0a0a] md:flex">
       {/* Logo */}
       <div className="px-6 pt-6 pb-8">
-        <Link href="/" className="font-heading text-xl font-bold italic text-white">
+        <Link href="/create" className="font-heading text-xl font-bold italic text-white">
           Bookshelf.
         </Link>
       </div>
@@ -50,10 +66,7 @@ export function AppSidebar() {
         </p>
         <ul className="space-y-0.5">
           {libraryItems.map((item) => {
-            const isActive =
-              item.href === "/"
-                ? pathname === "/"
-                : pathname.startsWith(item.href);
+            const isActive = pathname.startsWith(item.href);
             return (
               <li key={item.title}>
                 <Link
@@ -119,11 +132,16 @@ export function AppSidebar() {
               className="w-full justify-start gap-3 px-3 text-[#9ca3af] hover:bg-[#141414] hover:text-white"
             >
               <Avatar className="h-6 w-6">
+                {profile?.avatar_url && (
+                  <AvatarImage src={profile.avatar_url} alt="" />
+                )}
                 <AvatarFallback className="bg-[#2a2a2a] text-[10px] text-[#9ca3af]">
-                  U
+                  {getInitials()}
                 </AvatarFallback>
               </Avatar>
-              <span className="truncate text-sm">user@example.com</span>
+              <span className="truncate text-sm">
+                {profile?.display_name ?? profile?.email ?? "Loading..."}
+              </span>
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent side="top" align="start" className="w-48">
@@ -133,7 +151,7 @@ export function AppSidebar() {
                 Settings
               </Link>
             </DropdownMenuItem>
-            <DropdownMenuItem>
+            <DropdownMenuItem onClick={handleLogout}>
               <LogOut className="mr-2 h-4 w-4" aria-hidden="true" />
               Log out
             </DropdownMenuItem>

@@ -1,4 +1,4 @@
-.PHONY: dev lint format check test
+.PHONY: dev lint format check test test-coverage
 
 dev:
 	uv run uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
@@ -16,3 +16,6 @@ check:
 
 test:
 	uv run pytest
+
+test-coverage:
+	uv run pytest --cov=src/app --cov-report=term-missing --cov-report=html

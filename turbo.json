@@ -12,6 +12,14 @@
     "format": {
       "cache": false
     },
-    "format:check": {}
+    "format:check": {},
+    "test": {
+      "outputs": ["coverage/**"],
+      "dependsOn": ["^build"]
+    },
+    "test:coverage": {
+      "outputs": ["coverage/**"],
+      "dependsOn": ["^build"]
+    }
   }
 }

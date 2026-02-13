@@ -45,7 +45,9 @@ make build            # Turbo build
 make lint             # Ruff (core) + ESLint (web)
 make format           # Ruff format (core) + Prettier (web)
 make check            # Check formatting without writing
-make test             # pytest (core)
+make test             # Run all tests (core + web)
+make test-watch       # Run web tests in watch mode
+make test-coverage    # Run tests with coverage reports
 make release          # Bump version, update CHANGELOG, commit, tag
 make release-first    # First release (no version bump)
 ```
@@ -70,7 +72,72 @@ supabase db reset             # Apply all migrations + seed.sql
 - **Studio**: http://localhost:54323
 - **Inbucket** (email testing): http://localhost:54324
 
-No migrations or schema defined yet — `db/supabase/seed.sql` is empty.
+Database schema includes:
+- `public.users` table extending `auth.users` with profile data and Discogs integration fields
+- Row Level Security (RLS) policies for user data access
+- Triggers for automatic profile creation and timestamp updates
+
+## Testing
+
+### Web (Vitest + React Testing Library)
+
+```sh
+pnpm --filter web test          # Run all tests
+pnpm --filter web test:watch    # Watch mode
+pnpm --filter web test:ui       # Vitest UI
+pnpm --filter web test:coverage # Coverage report
+```
+
+**Test location:** Co-located with source files in component folders (`component-name/component-name.test.tsx`)
+
+**Test utilities:** `web/tests/` contains:
+- `setup.ts` - Global test configuration
+- `utils/render-with-providers.tsx` - Custom render with AuthProvider
+- `mocks/` - Mock factories for Supabase, Next.js navigation, etc.
+- `fixtures/` - Test data fixtures (users, profiles)
+
+**Component structure:**
+```
+components/component-name/
+├── index.tsx                 # Barrel export
+├── component-name.tsx        # Implementation
+└── component-name.test.tsx   # Tests
+```
+
+### Core (pytest)
+
+```sh
+cd core && uv run pytest         # Run all tests
+cd core && uv run pytest --cov   # With coverage
+```
+
+**Test location:** `core/tests/` directory
+
+**Fixtures:** `conftest.py` provides FastAPI test client and common fixtures
+
+### Running All Tests
+
+```sh
+make test              # Run all tests (core + web)
+make test-watch        # Watch mode (web only)
+make test-coverage     # With coverage reports
+```
+
+### Testing Conventions
+
+1. **Always add tests with new features** - Tests accompany code, not as an afterthought
+2. **Test file naming:**
+   - Web: `component-name.test.tsx` (co-located in component folder)
+   - Core: `test_module_name.py` (in tests/ directory)
+3. **Mock external dependencies:** Supabase, Next.js navigation, etc.
+4. **Focus on critical paths:** Auth, data mutations, business logic
+5. **Test behavior, not implementation:** Query by user-facing attributes (roles, labels, text)
+6. **Use descriptive test names:** "it redirects to login when accessing protected route without auth"
+
+### Current Test Coverage
+
+- **Web:** 32 tests covering auth infrastructure, middleware, routing, Supabase clients
+- **Core:** 2 tests covering health endpoint
 
 ## Code style
 

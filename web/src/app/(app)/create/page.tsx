@@ -75,7 +75,7 @@ const recentPlaylists = [
 
 type CreatorMode = "ai" | "manual";
 
-export default function HomePage() {
+export default function CreatePage() {
   const [mode, setMode] = useState<CreatorMode>("ai");
   const [prompt, setPrompt] = useState("");
   const [playlistName, setPlaylistName] = useState("");

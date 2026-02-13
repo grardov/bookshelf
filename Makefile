@@ -1,4 +1,4 @@
-.PHONY: dev dev-db dev-stop build lint format check install test release release-first
+.PHONY: dev dev-db dev-stop build lint format check install test test-watch test-coverage release release-first
 
 dev:
 	@echo "Starting db, core, and web..."
@@ -38,6 +38,14 @@ install:
 
 test:
 	$(MAKE) -C core test
+	pnpm turbo test
+
+test-watch:
+	pnpm --filter web test:watch
+
+test-coverage:
+	$(MAKE) -C core test-coverage
+	pnpm turbo test:coverage
 
 release:
 	pnpm release

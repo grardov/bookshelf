@@ -19,6 +19,9 @@ dependencies = [
 dev = [
     "ruff",
     "pytest",
+    "pytest-asyncio>=0.24.0",
+    "pytest-cov>=6.0.0",
+    "httpx>=0.28.0",
 ]
 
 [tool.ruff]
