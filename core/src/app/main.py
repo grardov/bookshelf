@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.routers import collection, discogs, users
+from app.routers import collection, discogs, playlists, users
 
 app = FastAPI(title="Bookshelf API")
 
@@ -18,6 +18,7 @@ app.add_middleware(
 app.include_router(users.router, prefix="/api/users", tags=["users"])
 app.include_router(discogs.router, prefix="/api/discogs", tags=["discogs"])
 app.include_router(collection.router, prefix="/api/collection", tags=["collection"])
+app.include_router(playlists.router, prefix="/api/playlists", tags=["playlists"])
 
 
 @app.get("/health")

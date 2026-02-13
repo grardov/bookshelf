@@ -1,6 +1,5 @@
-import { describe, it, expect, vi } from "vitest";
+import { describe, it, expect } from "vitest";
 import { render, screen } from "@testing-library/react";
-import userEvent from "@testing-library/user-event";
 import { ReleaseCard } from "./release-card";
 
 describe("ReleaseCard", () => {
@@ -17,6 +16,13 @@ describe("ReleaseCard", () => {
     expect(screen.getByText("Daft Punk")).toBeInTheDocument();
   });
 
+  it("renders as a link to the release detail page", () => {
+    render(<ReleaseCard {...defaultProps} />);
+
+    const link = screen.getByRole("link");
+    expect(link).toHaveAttribute("href", "/collection/release-1");
+  });
+
   it("renders year when provided", () => {
     render(<ReleaseCard {...defaultProps} year="1997" />);
 
@@ -29,22 +35,20 @@ describe("ReleaseCard", () => {
     expect(screen.getByText("Electronic")).toBeInTheDocument();
   });
 
-  it("renders format badge with default vinyl", () => {
-    render(<ReleaseCard {...defaultProps} />);
+  it("renders format badge when provided", () => {
+    render(<ReleaseCard {...defaultProps} format="LP" />);
 
-    expect(screen.getByText("vinyl")).toBeInTheDocument();
+    expect(screen.getByText("LP")).toBeInTheDocument();
   });
 
-  it("renders format badge with CD", () => {
-    render(<ReleaseCard {...defaultProps} format="cd" />);
+  it("does not render format badge when not provided", () => {
+    const { container } = render(<ReleaseCard {...defaultProps} />);
 
-    expect(screen.getByText("cd")).toBeInTheDocument();
-  });
-
-  it("renders format badge with cassette", () => {
-    render(<ReleaseCard {...defaultProps} format="cassette" />);
-
-    expect(screen.getByText("cassette")).toBeInTheDocument();
+    // Format badge would have text like "LP", "CD", etc.
+    const formatBadge = container.querySelector(
+      'span[class*="rounded-full"][class*="border"]'
+    );
+    expect(formatBadge).not.toBeInTheDocument();
   });
 
   it("renders cover image when coverUrl is provided", () => {
@@ -68,48 +72,11 @@ describe("ReleaseCard", () => {
   it("renders disc icon when no cover image", () => {
     const { container } = render(<ReleaseCard {...defaultProps} />);
 
-    const discIcon = container.querySelector('svg');
+    const discIcon = container.querySelector("svg");
     expect(discIcon).toBeInTheDocument();
   });
 
-  it("renders delete button when onDelete is provided", () => {
-    const mockDelete = vi.fn();
-
-    render(<ReleaseCard {...defaultProps} onDelete={mockDelete} />);
-
-    const deleteButton = screen.getByRole("button", {
-      name: /delete homework/i,
-    });
-    expect(deleteButton).toBeInTheDocument();
-  });
-
-  it("does not render delete button when onDelete is not provided", () => {
-    render(<ReleaseCard {...defaultProps} />);
-
-    expect(
-      screen.queryByRole("button", { name: /delete/i })
-    ).not.toBeInTheDocument();
-  });
-
-  it("calls onDelete with release id when delete button is clicked", async () => {
-    const user = userEvent.setup();
-    const mockDelete = vi.fn();
-
-    render(<ReleaseCard {...defaultProps} onDelete={mockDelete} />);
-
-    const deleteButton = screen.getByRole("button", {
-      name: /delete homework/i,
-    });
-    await user.click(deleteButton);
-
-    expect(mockDelete).toHaveBeenCalledWith("release-1");
-  });
-
   it("renders year and genre with separator", () => {
-    render(
-      <ReleaseCard {...defaultProps} year="1997" genre="Electronic" />
-    );
-
     const { container } = render(
       <ReleaseCard {...defaultProps} year="1997" genre="Electronic" />
     );
@@ -138,7 +105,8 @@ describe("ReleaseCard", () => {
   });
 
   it("handles long titles with truncation", () => {
-    const longTitle = "This is a very long album title that should be truncated";
+    const longTitle =
+      "This is a very long album title that should be truncated";
     render(<ReleaseCard {...defaultProps} title={longTitle} />);
 
     const titleElement = screen.getByText(longTitle);
@@ -146,17 +114,18 @@ describe("ReleaseCard", () => {
   });
 
   it("handles long artist names with truncation", () => {
-    const longArtist = "This is a very long artist name that should be truncated";
+    const longArtist =
+      "This is a very long artist name that should be truncated";
     render(<ReleaseCard {...defaultProps} artist={longArtist} />);
 
     const artistElement = screen.getByText(longArtist);
     expect(artistElement).toHaveClass("truncate");
   });
 
-  it("applies hover styles class", () => {
+  it("applies hover styles class to article", () => {
     const { container } = render(<ReleaseCard {...defaultProps} />);
 
-    const article = container.firstChild;
+    const article = container.querySelector("article");
     expect(article).toHaveClass("hover:border-[#404040]");
   });
 
@@ -166,5 +135,11 @@ describe("ReleaseCard", () => {
     const article = container.querySelector("article");
     expect(article).toBeInTheDocument();
     expect(article).toHaveClass("group");
+  });
+
+  it("accepts numeric year", () => {
+    render(<ReleaseCard {...defaultProps} year={1997} />);
+
+    expect(screen.getByText("1997")).toBeInTheDocument();
   });
 });

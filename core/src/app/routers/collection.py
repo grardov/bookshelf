@@ -4,7 +4,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query, status
 
 from app.config import Config
 from app.dependencies import get_current_user_id
-from app.models import PaginatedReleases, Release, SyncSummary
+from app.models import PaginatedReleases, Release, ReleaseTracksResponse, SyncSummary
 from app.services.collection import CollectionSyncError, get_collection_service
 from app.supabase import get_supabase
 
@@ -204,3 +204,97 @@ def get_release(
         )
 
     return response.data
+
+
+@router.get("/{release_id}/tracks", response_model=ReleaseTracksResponse)
+def get_release_tracks(
+    release_id: str,
+    user_id: str = Depends(get_current_user_id),  # noqa: B008
+):
+    """Fetch tracks for a release from Discogs API.
+
+    Tracks are fetched on-demand and not stored. Returns flat list
+    with position codes (A1, B1, C1, D1) for multi-disc releases.
+
+    Args:
+        release_id: Release UUID
+        user_id: Authenticated user ID from JWT
+
+    Returns:
+        Release track listing from Discogs
+    """
+    if not Config.is_discogs_configured():
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="Discogs integration is not configured",
+        )
+
+    supabase = get_supabase()
+
+    # Get release from database
+    try:
+        response = (
+            supabase.table("releases")
+            .select("*")
+            .eq("id", release_id)
+            .eq("user_id", user_id)
+            .single()
+            .execute()
+        )
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Release not found",
+        ) from e
+
+    if not response.data:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Release not found",
+        )
+
+    release = response.data
+
+    # Get user's Discogs credentials
+    user = _require_discogs_connected(user_id)
+
+    # Fetch tracks from Discogs
+    try:
+        service = get_collection_service()
+        client = service._create_authenticated_client(
+            user["discogs_access_token"],
+            user["discogs_access_token_secret"],
+        )
+
+        discogs_release = client.release(release["discogs_release_id"])
+
+        tracks = []
+        for track in discogs_release.tracklist:
+            # Get track-level artist name(s) if available
+            if hasattr(track, "artists") and track.artists:
+                artists = [a.name for a in track.artists]
+            else:
+                artists = [release["artist_name"]]
+
+            tracks.append({
+                "position": track.position,
+                "title": track.title,
+                "duration": track.duration if track.duration else None,
+                "artists": artists,
+            })
+
+        return ReleaseTracksResponse(
+            release_id=release["id"],
+            discogs_release_id=release["discogs_release_id"],
+            title=release["title"],
+            artist_name=release["artist_name"],
+            tracks=tracks,
+        )
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_502_BAD_GATEWAY,
+            detail=f"Failed to fetch tracks from Discogs: {e!s}",
+        ) from e

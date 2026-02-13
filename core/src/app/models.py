@@ -95,3 +95,113 @@ class PaginatedReleases(BaseModel):
     page: int
     page_size: int
     has_more: bool
+
+
+# =============================================
+# Playlist Models
+# =============================================
+
+
+class CreatePlaylist(BaseModel):
+    """Create playlist request model."""
+
+    name: str = Field(..., min_length=1, max_length=200, description="Playlist name")
+    description: str | None = Field(
+        None, max_length=1000, description="Playlist description"
+    )
+    tags: list[str] = Field(default_factory=list, description="Tags/categories")
+
+
+class UpdatePlaylist(BaseModel):
+    """Update playlist request model."""
+
+    name: str | None = Field(None, min_length=1, max_length=200)
+    description: str | None = Field(None, max_length=1000)
+    tags: list[str] | None = None
+
+
+class Playlist(BaseModel):
+    """Playlist model."""
+
+    id: str
+    user_id: str
+    name: str
+    description: str | None = None
+    tags: list[str] = Field(default_factory=list)
+    track_count: int = 0
+    created_at: datetime
+    updated_at: datetime | None = None
+
+
+class PlaylistTrack(BaseModel):
+    """Track in a playlist (snapshot data)."""
+
+    id: str
+    playlist_id: str
+    release_id: str
+    discogs_release_id: int
+    position: str
+    title: str
+    artist: str
+    duration: str | None = None
+    track_order: int
+    created_at: datetime
+    updated_at: datetime | None = None
+
+
+class PlaylistWithTracks(Playlist):
+    """Playlist with tracks included."""
+
+    tracks: list[PlaylistTrack] = Field(default_factory=list)
+    total_duration: str | None = None
+
+
+class AddTrackRequest(BaseModel):
+    """Request to add a track to playlist."""
+
+    release_id: str = Field(..., description="Release UUID from collection")
+    discogs_release_id: int = Field(..., description="Discogs release ID")
+    position: str = Field(..., description="Track position (e.g., 'A1')")
+    title: str = Field(..., min_length=1)
+    artist: str = Field(..., min_length=1)
+    duration: str | None = Field(None, description="Duration string e.g., '6:42'")
+
+
+class ReorderTracksRequest(BaseModel):
+    """Request to reorder tracks in playlist."""
+
+    track_ids: list[str] = Field(..., description="Track IDs in new order")
+
+
+class PaginatedPlaylists(BaseModel):
+    """Paginated list of playlists."""
+
+    items: list[Playlist]
+    total: int
+    page: int
+    page_size: int
+    has_more: bool
+
+
+# =============================================
+# Discogs Track Models (for on-demand fetching)
+# =============================================
+
+
+class DiscogsTrack(BaseModel):
+    """Track from Discogs API."""
+
+    position: str
+    title: str
+    duration: str | None = None
+    artists: list[str] = Field(default_factory=list)
+
+
+class ReleaseTracksResponse(BaseModel):
+    """Response for release tracks from Discogs."""
+
+    release_id: str
+    discogs_release_id: int
+    title: str
+    artist_name: str
+    tracks: list[DiscogsTrack]

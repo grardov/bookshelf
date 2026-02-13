@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -13,10 +13,15 @@ import {
   PartyPopper,
   Wand2,
   PenLine,
+  ListMusic,
+  Plus,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Skeleton } from "@/components/ui/skeleton";
 import { PlaylistCard } from "@/components/playlist-card";
+import { CreatePlaylistDialog } from "@/components/create-playlist-dialog";
+import { listPlaylists, type Playlist } from "@/lib/api/playlists";
 
 const suggestions = [
   {
@@ -46,39 +51,48 @@ const suggestions = [
   },
 ];
 
-const recentPlaylists = [
-  {
-    id: "1",
-    title: "Late Night Deep House",
-    trackCount: 18,
-    duration: "1h 24m",
-    genre: "Deep House",
-    createdAt: "2 hours ago",
-  },
-  {
-    id: "2",
-    title: "Sunday Morning Jazz",
-    trackCount: 12,
-    duration: "52m",
-    genre: "Jazz",
-    createdAt: "Yesterday",
-  },
-  {
-    id: "3",
-    title: "Vinyl Classics Mix",
-    trackCount: 24,
-    duration: "2h 10m",
-    genre: "Various",
-    createdAt: "3 days ago",
-  },
-];
-
 type CreatorMode = "ai" | "manual";
 
 export default function CreatePage() {
   const [mode, setMode] = useState<CreatorMode>("ai");
   const [prompt, setPrompt] = useState("");
   const [playlistName, setPlaylistName] = useState("");
+  const [recentPlaylists, setRecentPlaylists] = useState<Playlist[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [createOpen, setCreateOpen] = useState(false);
+
+  const fetchRecentPlaylists = useCallback(async () => {
+    setIsLoading(true);
+    try {
+      const response = await listPlaylists(1, 5);
+      setRecentPlaylists(response.items);
+    } catch (err) {
+      console.error("Failed to fetch playlists:", err);
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchRecentPlaylists();
+  }, [fetchRecentPlaylists]);
+
+  const handleCreateSuccess = (newPlaylist: Playlist) => {
+    setRecentPlaylists((prev) => [newPlaylist, ...prev].slice(0, 5));
+  };
+
+  const formatDate = (dateStr: string) => {
+    const date = new Date(dateStr);
+    const now = new Date();
+    const diffMs = now.getTime() - date.getTime();
+    const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+
+    if (diffDays === 0) return "Today";
+    if (diffDays === 1) return "Yesterday";
+    if (diffDays < 7) return `${diffDays} days ago`;
+    if (diffDays < 30) return `${Math.floor(diffDays / 7)} weeks ago`;
+    return date.toLocaleDateString();
+  };
 
   return (
     <main className="flex flex-1 flex-col">
@@ -257,21 +271,67 @@ export default function CreatePage() {
               Recent playlists
             </h2>
           </div>
-          <Button
-            variant="ghost"
-            size="sm"
-            className="text-[#525252] hover:text-white"
-            asChild
-          >
-            <Link href="/playlists">View all</Link>
-          </Button>
+          {recentPlaylists.length > 0 && (
+            <Button
+              variant="ghost"
+              size="sm"
+              className="text-[#525252] hover:text-white"
+              asChild
+            >
+              <Link href="/playlists">View all</Link>
+            </Button>
+          )}
         </div>
-        <div className="space-y-2">
-          {recentPlaylists.map((playlist) => (
-            <PlaylistCard key={playlist.id} {...playlist} />
-          ))}
-        </div>
+
+        {isLoading ? (
+          <div className="space-y-2">
+            {[1, 2, 3].map((i) => (
+              <div
+                key={i}
+                className="flex items-center gap-4 rounded-lg border border-[#2a2a2a] bg-[#141414] p-4"
+              >
+                <div className="flex-1 space-y-2">
+                  <Skeleton className="h-4 w-48" />
+                  <Skeleton className="h-3 w-24" />
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : recentPlaylists.length === 0 ? (
+          <div className="flex flex-col items-center justify-center rounded-lg border border-[#2a2a2a] bg-[#141414] py-12">
+            <ListMusic className="h-10 w-10 text-[#525252]" aria-hidden="true" />
+            <p className="mt-3 text-sm text-[#525252]">No playlists yet</p>
+            <Button
+              size="sm"
+              className="mt-4 gap-2 rounded-full"
+              onClick={() => setCreateOpen(true)}
+            >
+              <Plus className="h-4 w-4" aria-hidden="true" />
+              Create playlist
+            </Button>
+          </div>
+        ) : (
+          <div className="space-y-2">
+            {recentPlaylists.map((playlist) => (
+              <PlaylistCard
+                key={playlist.id}
+                id={playlist.id}
+                title={playlist.name}
+                trackCount={playlist.track_count}
+                duration={`${playlist.track_count} tracks`}
+                genre={playlist.tags[0]}
+                createdAt={formatDate(playlist.created_at)}
+              />
+            ))}
+          </div>
+        )}
       </section>
+
+      <CreatePlaylistDialog
+        open={createOpen}
+        onOpenChange={setCreateOpen}
+        onCreated={handleCreateSuccess}
+      />
     </main>
   );
 }

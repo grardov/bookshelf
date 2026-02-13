@@ -1,14 +1,16 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
+import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
-import { ArrowLeft, Play, Pencil, Trash2 } from "lucide-react";
+import { ArrowLeft, Play, Pencil, Trash2, Loader2, ListMusic } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { Skeleton } from "@/components/ui/skeleton";
 import { TrackRow, TrackListHeader } from "@/components/track-row";
 import {
   Dialog,
@@ -17,108 +19,135 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
   DialogClose,
 } from "@/components/ui/dialog";
-
-const playlist = {
-  id: "1",
-  title: "Late Night Deep House",
-  description:
-    "Smooth deep house tracks perfect for winding down after midnight. Selected from your collection with a focus on warm pads and rolling basslines.",
-  trackCount: 18,
-  duration: "1h 24m",
-  genre: "Deep House",
-  createdAt: "2 hours ago",
-  source: "ai" as const,
-};
-
-const tracks = [
-  {
-    id: "1",
-    position: 1,
-    title: "Deep Inside",
-    artist: "Kerri Chandler",
-    album: "Spaces and Places",
-    cover: "/covers/placeholder.svg",
-    duration: "6:42",
-    bpm: 122,
-  },
-  {
-    id: "2",
-    position: 2,
-    title: "Can You Feel It",
-    artist: "Larry Heard",
-    album: "Amnesia",
-    cover: "/covers/placeholder.svg",
-    duration: "7:15",
-    bpm: 120,
-  },
-  {
-    id: "3",
-    position: 3,
-    title: "Strings of Life",
-    artist: "Derrick May",
-    album: "Innovator",
-    cover: "/covers/placeholder.svg",
-    duration: "5:38",
-    bpm: 128,
-  },
-  {
-    id: "4",
-    position: 4,
-    title: "Move Your Body",
-    artist: "Marshall Jefferson",
-    album: "House Music Anthem",
-    cover: "/covers/placeholder.svg",
-    duration: "8:02",
-    bpm: 121,
-  },
-  {
-    id: "5",
-    position: 5,
-    title: "French Kiss",
-    artist: "Lil Louis",
-    album: "From the Mind of Lil Louis",
-    cover: "/covers/placeholder.svg",
-    duration: "9:45",
-    bpm: 118,
-  },
-  {
-    id: "6",
-    position: 6,
-    title: "Missing You",
-    artist: "Ron Trent",
-    album: "Prescription",
-    cover: "/covers/placeholder.svg",
-    duration: "6:30",
-    bpm: 123,
-  },
-  {
-    id: "7",
-    position: 7,
-    title: "Star Dancing",
-    artist: "Moodymann",
-    album: "Silentintroduction",
-    cover: "/covers/placeholder.svg",
-    duration: "5:12",
-    bpm: 119,
-  },
-  {
-    id: "8",
-    position: 8,
-    title: "Sandstorms",
-    artist: "Theo Parrish",
-    album: "First Floor",
-    cover: "/covers/placeholder.svg",
-    duration: "4:55",
-    bpm: 126,
-  },
-];
+import {
+  getPlaylist,
+  updatePlaylist,
+  deletePlaylist,
+  removeTrackFromPlaylist,
+  type PlaylistWithTracks,
+} from "@/lib/api/playlists";
 
 export default function PlaylistDetailPage() {
+  const params = useParams();
+  const router = useRouter();
+  const playlistId = params.id as string;
+
+  const [playlist, setPlaylist] = useState<PlaylistWithTracks | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
   const [editOpen, setEditOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+
+  // Edit form state
+  const [editName, setEditName] = useState("");
+  const [editDescription, setEditDescription] = useState("");
+  const [editTags, setEditTags] = useState("");
+
+  const fetchPlaylist = useCallback(async () => {
+    setIsLoading(true);
+    try {
+      const data = await getPlaylist(playlistId);
+      setPlaylist(data);
+    } catch (err) {
+      console.error("Failed to fetch playlist:", err);
+      router.push("/playlists");
+    } finally {
+      setIsLoading(false);
+    }
+  }, [playlistId, router]);
+
+  useEffect(() => {
+    fetchPlaylist();
+  }, [fetchPlaylist]);
+
+  const handleEditOpen = () => {
+    if (playlist) {
+      setEditName(playlist.name);
+      setEditDescription(playlist.description || "");
+      setEditTags(playlist.tags.join(", "));
+    }
+    setEditOpen(true);
+  };
+
+  const handleEditSave = async () => {
+    if (!playlist || !editName.trim()) return;
+
+    setIsSaving(true);
+    try {
+      const tagsArray = editTags
+        .split(",")
+        .map((t) => t.trim())
+        .filter(Boolean);
+
+      const updated = await updatePlaylist(playlistId, {
+        name: editName.trim(),
+        description: editDescription.trim() || undefined,
+        tags: tagsArray,
+      });
+
+      setPlaylist((prev) =>
+        prev
+          ? {
+              ...prev,
+              name: updated.name,
+              description: updated.description,
+              tags: updated.tags,
+            }
+          : null
+      );
+      setEditOpen(false);
+    } catch (err) {
+      console.error("Failed to update playlist:", err);
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleDelete = async () => {
+    setIsDeleting(true);
+    try {
+      await deletePlaylist(playlistId);
+      router.push("/playlists");
+    } catch (err) {
+      console.error("Failed to delete playlist:", err);
+      setIsDeleting(false);
+    }
+  };
+
+  const handleRemoveTrack = async (trackId: string) => {
+    try {
+      await removeTrackFromPlaylist(playlistId, trackId);
+      setPlaylist((prev) =>
+        prev
+          ? {
+              ...prev,
+              tracks: prev.tracks.filter((t) => t.id !== trackId),
+              track_count: prev.track_count - 1,
+            }
+          : null
+      );
+    } catch (err) {
+      console.error("Failed to remove track:", err);
+    }
+  };
+
+  if (isLoading) {
+    return (
+      <main className="flex-1 py-6">
+        <Skeleton className="mb-6 h-5 w-24" />
+        <Skeleton className="mb-2 h-10 w-64" />
+        <Skeleton className="mb-4 h-4 w-96" />
+        <Skeleton className="mt-6 h-24 w-full max-w-md" />
+      </main>
+    );
+  }
+
+  if (!playlist) {
+    return null;
+  }
 
   return (
     <main className="flex-1 py-6">
@@ -137,141 +166,76 @@ export default function PlaylistDetailPage() {
           id="playlist-title"
           className="font-heading text-3xl font-bold text-white md:text-4xl"
         >
-          {playlist.title}
+          {playlist.name}
         </h1>
-        <p className="mt-3 max-w-2xl text-sm leading-relaxed text-[#9ca3af]">
-          {playlist.description}
-        </p>
+        {playlist.description && (
+          <p className="mt-3 max-w-2xl text-sm leading-relaxed text-[#9ca3af]">
+            {playlist.description}
+          </p>
+        )}
 
         {/* Stats grid */}
-        <div className="mt-6 grid w-full max-w-md grid-cols-3 divide-x divide-[#2a2a2a] rounded-lg border border-[#2a2a2a]">
-          <div className="px-4 py-3 text-center">
-            <p className="text-xs text-[#525252]">Genre</p>
-            <p className="mt-1 text-sm font-medium text-white">
-              {playlist.genre}
-            </p>
-          </div>
+        <div className="mt-6 grid w-full max-w-md grid-cols-2 divide-x divide-[#2a2a2a] rounded-lg border border-[#2a2a2a]">
           <div className="px-4 py-3 text-center">
             <p className="text-xs text-[#525252]">Tracks</p>
             <p className="mt-1 text-sm font-medium text-white">
-              {playlist.trackCount}
+              {playlist.track_count}
             </p>
           </div>
           <div className="px-4 py-3 text-center">
             <p className="text-xs text-[#525252]">Duration</p>
             <p className="mt-1 text-sm font-medium text-white">
-              {playlist.duration}
+              {playlist.total_duration || "--"}
             </p>
           </div>
         </div>
 
+        {/* Tags */}
+        {playlist.tags.length > 0 && (
+          <div className="mt-4 flex flex-wrap gap-2">
+            {playlist.tags.map((tag) => (
+              <Badge
+                key={tag}
+                variant="secondary"
+                className="border-[#2a2a2a] bg-[#1a1a1a] text-[#9ca3af]"
+              >
+                {tag}
+              </Badge>
+            ))}
+          </div>
+        )}
+
         {/* Actions */}
         <div className="mt-6 flex items-center gap-3">
-          <Button className="gap-2 rounded-full">
+          <Button
+            className="gap-2 rounded-full"
+            disabled={playlist.tracks.length === 0}
+          >
             <Play className="h-4 w-4" aria-hidden="true" />
             Play all
           </Button>
 
           {/* Edit Dialog */}
-          <Dialog open={editOpen} onOpenChange={setEditOpen}>
-            <DialogTrigger asChild>
-              <Button
-                variant="ghost"
-                size="icon"
-                className="text-[#9ca3af] hover:text-white"
-                aria-label="Edit playlist"
-              >
-                <Pencil className="h-4 w-4" aria-hidden="true" />
-              </Button>
-            </DialogTrigger>
-            <DialogContent className="border-[#2a2a2a] bg-[#141414] sm:max-w-md">
-              <DialogHeader>
-                <DialogTitle className="text-white">Edit playlist</DialogTitle>
-                <DialogDescription className="text-[#9ca3af]">
-                  Update the details of your playlist.
-                </DialogDescription>
-              </DialogHeader>
-              <form className="space-y-4 py-4">
-                <div className="space-y-2">
-                  <Label htmlFor="edit-title" className="text-[#9ca3af]">
-                    Title
-                  </Label>
-                  <Input
-                    id="edit-title"
-                    defaultValue={playlist.title}
-                    className="border-[#2a2a2a] bg-[#1a1a1a] text-white focus-visible:ring-primary"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="edit-description" className="text-[#9ca3af]">
-                    Description
-                  </Label>
-                  <Textarea
-                    id="edit-description"
-                    defaultValue={playlist.description}
-                    rows={3}
-                    className="border-[#2a2a2a] bg-[#1a1a1a] text-white focus-visible:ring-primary"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="edit-genre" className="text-[#9ca3af]">
-                    Genre
-                  </Label>
-                  <Input
-                    id="edit-genre"
-                    defaultValue={playlist.genre}
-                    className="border-[#2a2a2a] bg-[#1a1a1a] text-white focus-visible:ring-primary"
-                  />
-                </div>
-              </form>
-              <DialogFooter className="gap-2 sm:gap-0">
-                <DialogClose asChild>
-                  <Button variant="ghost" className="text-[#9ca3af]">
-                    Cancel
-                  </Button>
-                </DialogClose>
-                <Button type="submit">Save changes</Button>
-              </DialogFooter>
-            </DialogContent>
-          </Dialog>
-
-          {/* Delete Dialog */}
-          <Dialog open={deleteOpen} onOpenChange={setDeleteOpen}>
-            <DialogTrigger asChild>
-              <Button
-                variant="ghost"
-                size="icon"
-                className="text-[#9ca3af] hover:text-white"
-                aria-label="Delete playlist"
-              >
-                <Trash2 className="h-4 w-4" aria-hidden="true" />
-              </Button>
-            </DialogTrigger>
-            <DialogContent className="border-[#2a2a2a] bg-[#141414] sm:max-w-md">
-              <DialogHeader>
-                <DialogTitle className="text-white">Delete playlist</DialogTitle>
-                <DialogDescription className="text-[#9ca3af]">
-                  Are you sure you want to delete &quot;{playlist.title}&quot;?
-                  This action cannot be undone.
-                </DialogDescription>
-              </DialogHeader>
-              <DialogFooter className="gap-2 sm:gap-0">
-                <DialogClose asChild>
-                  <Button variant="ghost" className="text-[#9ca3af]">
-                    Cancel
-                  </Button>
-                </DialogClose>
-                <Button variant="destructive">Delete playlist</Button>
-              </DialogFooter>
-            </DialogContent>
-          </Dialog>
-
-          <Badge
-            variant="secondary"
-            className="ml-auto border-[#2a2a2a] bg-[#1a1a1a] text-[#9ca3af]"
+          <Button
+            variant="ghost"
+            size="icon"
+            className="text-[#9ca3af] hover:text-white"
+            aria-label="Edit playlist"
+            onClick={handleEditOpen}
           >
-            {playlist.source === "ai" ? "AI generated" : "Manual"}
-          </Badge>
+            <Pencil className="h-4 w-4" aria-hidden="true" />
+          </Button>
+
+          {/* Delete Button */}
+          <Button
+            variant="ghost"
+            size="icon"
+            className="text-[#9ca3af] hover:text-white"
+            aria-label="Delete playlist"
+            onClick={() => setDeleteOpen(true)}
+          >
+            <Trash2 className="h-4 w-4" aria-hidden="true" />
+          </Button>
         </div>
       </section>
 
@@ -279,28 +243,149 @@ export default function PlaylistDetailPage() {
 
       {/* Track list */}
       <section aria-label="Track list">
-        <TrackListHeader showAlbum showBpm />
-        <Separator className="mb-1 hidden bg-[#2a2a2a] md:block" />
+        {playlist.tracks.length === 0 ? (
+          <div className="flex flex-col items-center justify-center rounded-lg border border-[#2a2a2a] bg-[#141414] py-12">
+            <ListMusic className="h-10 w-10 text-[#525252]" aria-hidden="true" />
+            <p className="mt-4 text-sm text-[#525252]">
+              No tracks in this playlist yet
+            </p>
+            <p className="mt-1 text-xs text-[#525252]">
+              Add tracks from your collection
+            </p>
+          </div>
+        ) : (
+          <>
+            <TrackListHeader showAlbum={false} showBpm={false} />
+            <Separator className="mb-1 hidden bg-[#2a2a2a] md:block" />
 
-        <ul className="space-y-0.5" role="list">
-          {tracks.map((track) => (
-            <TrackRow
-              key={track.id}
-              {...track}
-              menuItems={[
-                {
-                  label: "Remove from playlist",
-                  onClick: () => console.log("Remove", track.id),
-                },
-                {
-                  label: "View on Discogs",
-                  onClick: () => console.log("View on Discogs", track.id),
-                },
-              ]}
-            />
-          ))}
-        </ul>
+            <ul className="space-y-0.5" role="list">
+              {playlist.tracks.map((track) => (
+                <TrackRow
+                  key={track.id}
+                  id={track.id}
+                  position={track.track_order}
+                  title={track.title}
+                  artist={track.artist}
+                  duration={track.duration || "--:--"}
+                  menuItems={[
+                    {
+                      label: "Remove from playlist",
+                      onClick: () => handleRemoveTrack(track.id),
+                      destructive: true,
+                    },
+                    {
+                      label: "View release",
+                      onClick: () =>
+                        router.push(`/collection/${track.release_id}`),
+                    },
+                  ]}
+                />
+              ))}
+            </ul>
+          </>
+        )}
       </section>
+
+      {/* Edit Dialog */}
+      <Dialog open={editOpen} onOpenChange={setEditOpen}>
+        <DialogContent className="border-[#2a2a2a] bg-[#141414] sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="text-white">Edit playlist</DialogTitle>
+            <DialogDescription className="text-[#9ca3af]">
+              Update the details of your playlist.
+            </DialogDescription>
+          </DialogHeader>
+          <form
+            onSubmit={(e) => {
+              e.preventDefault();
+              handleEditSave();
+            }}
+            className="space-y-4 py-4"
+          >
+            <div className="space-y-2">
+              <Label htmlFor="edit-title" className="text-[#9ca3af]">
+                Title
+              </Label>
+              <Input
+                id="edit-title"
+                value={editName}
+                onChange={(e) => setEditName(e.target.value)}
+                className="border-[#2a2a2a] bg-[#1a1a1a] text-white focus-visible:ring-primary"
+                required
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="edit-description" className="text-[#9ca3af]">
+                Description
+              </Label>
+              <Textarea
+                id="edit-description"
+                value={editDescription}
+                onChange={(e) => setEditDescription(e.target.value)}
+                rows={3}
+                className="border-[#2a2a2a] bg-[#1a1a1a] text-white focus-visible:ring-primary"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="edit-tags" className="text-[#9ca3af]">
+                Tags (comma-separated)
+              </Label>
+              <Input
+                id="edit-tags"
+                value={editTags}
+                onChange={(e) => setEditTags(e.target.value)}
+                placeholder="house, techno, ambient"
+                className="border-[#2a2a2a] bg-[#1a1a1a] text-white focus-visible:ring-primary"
+              />
+            </div>
+          </form>
+          <DialogFooter className="gap-2 sm:gap-0">
+            <DialogClose asChild>
+              <Button variant="ghost" className="text-[#9ca3af]">
+                Cancel
+              </Button>
+            </DialogClose>
+            <Button onClick={handleEditSave} disabled={!editName.trim() || isSaving}>
+              {isSaving ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                "Save changes"
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Dialog */}
+      <Dialog open={deleteOpen} onOpenChange={setDeleteOpen}>
+        <DialogContent className="border-[#2a2a2a] bg-[#141414] sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="text-white">Delete playlist</DialogTitle>
+            <DialogDescription className="text-[#9ca3af]">
+              Are you sure you want to delete &quot;{playlist.name}&quot;? This
+              action cannot be undone.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="gap-2 sm:gap-0">
+            <DialogClose asChild>
+              <Button variant="ghost" className="text-[#9ca3af]">
+                Cancel
+              </Button>
+            </DialogClose>
+            <Button
+              variant="destructive"
+              onClick={handleDelete}
+              disabled={isDeleting}
+            >
+              {isDeleting ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                "Delete playlist"
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </main>
   );
 }

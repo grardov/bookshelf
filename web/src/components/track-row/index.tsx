@@ -1,1 +1,1 @@
-export { TrackRow } from "./track-row";
+export { TrackRow, TrackListHeader } from "./track-row";

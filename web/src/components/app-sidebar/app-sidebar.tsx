@@ -1,5 +1,6 @@
 "use client";
 
+import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
@@ -9,6 +10,7 @@ import {
   Settings,
   LogOut,
   List,
+  Plus,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/contexts/auth-context";
@@ -20,6 +22,9 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
+import { CreatePlaylistDialog } from "@/components/create-playlist-dialog";
+import { listPlaylists, type Playlist } from "@/lib/api/playlists";
 
 const libraryItems = [
   { title: "Create", href: "/create", icon: Home },
@@ -27,14 +32,31 @@ const libraryItems = [
   { title: "Playlists", href: "/playlists", icon: ListMusic },
 ];
 
-const userPlaylists = [
-  { title: "Late Night Deep House", href: "/playlists/1", icon: List },
-  { title: "Sunday Morning Jazz", href: "/playlists/2", icon: List },
-];
-
 export function AppSidebar() {
   const pathname = usePathname();
   const { profile, signOut } = useAuth();
+  const [playlists, setPlaylists] = useState<Playlist[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [createOpen, setCreateOpen] = useState(false);
+
+  const fetchPlaylists = useCallback(async () => {
+    try {
+      const response = await listPlaylists(1, 5);
+      setPlaylists(response.items);
+    } catch (err) {
+      console.error("Failed to fetch playlists:", err);
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchPlaylists();
+  }, [fetchPlaylists]);
+
+  const handleCreateSuccess = (newPlaylist: Playlist) => {
+    setPlaylists((prev) => [newPlaylist, ...prev].slice(0, 5));
+  };
 
   const getInitials = () => {
     if (profile?.display_name) {
@@ -100,27 +122,46 @@ export function AppSidebar() {
         <p className="mb-2 mt-8 px-3 text-[11px] font-semibold uppercase tracking-widest text-[#525252]">
           Playlists
         </p>
-        <ul className="space-y-0.5">
-          {userPlaylists.map((item) => {
-            const isActive = pathname === item.href;
-            return (
-              <li key={item.title}>
-                <Link
-                  href={item.href}
-                  className={cn(
-                    "flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition-colors",
-                    isActive
-                      ? "bg-[#141414] text-white"
-                      : "text-[#9ca3af] hover:bg-[#141414] hover:text-white",
-                  )}
-                >
-                  <item.icon className="h-4 w-4 shrink-0" aria-hidden="true" />
-                  <span className="truncate">{item.title}</span>
-                </Link>
-              </li>
-            );
-          })}
-        </ul>
+        {isLoading ? (
+          <div className="space-y-1 px-3">
+            <Skeleton className="h-8 w-full" />
+            <Skeleton className="h-8 w-full" />
+          </div>
+        ) : playlists.length === 0 ? (
+          <div className="px-3">
+            <button
+              type="button"
+              onClick={() => setCreateOpen(true)}
+              className="flex w-full items-center gap-3 rounded-lg border border-dashed border-[#2a2a2a] px-3 py-2 text-sm text-[#525252] transition-colors hover:border-[#404040] hover:text-[#9ca3af]"
+            >
+              <Plus className="h-4 w-4 shrink-0" aria-hidden="true" />
+              <span>Create playlist</span>
+            </button>
+          </div>
+        ) : (
+          <ul className="space-y-0.5">
+            {playlists.map((playlist) => {
+              const href = `/playlists/${playlist.id}`;
+              const isActive = pathname === href;
+              return (
+                <li key={playlist.id}>
+                  <Link
+                    href={href}
+                    className={cn(
+                      "flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition-colors",
+                      isActive
+                        ? "bg-[#141414] text-white"
+                        : "text-[#9ca3af] hover:bg-[#141414] hover:text-white",
+                    )}
+                  >
+                    <List className="h-4 w-4 shrink-0" aria-hidden="true" />
+                    <span className="truncate">{playlist.name}</span>
+                  </Link>
+                </li>
+              );
+            })}
+          </ul>
+        )}
       </nav>
 
       {/* User footer */}
@@ -158,6 +199,12 @@ export function AppSidebar() {
           </DropdownMenuContent>
         </DropdownMenu>
       </div>
+
+      <CreatePlaylistDialog
+        open={createOpen}
+        onOpenChange={setCreateOpen}
+        onCreated={handleCreateSuccess}
+      />
     </aside>
   );
 }

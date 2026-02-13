@@ -54,17 +54,26 @@ make release-first    # First release (no version bump)
 
 ## API endpoints (core)
 
-| Method | Path                      | Description                | Auth Required |
-|--------|---------------------------|----------------------------|---------------|
-| GET    | `/health`                 | Health check               | No            |
-| GET    | `/api/users/me`           | Get current user profile   | Yes (JWT)     |
-| PATCH  | `/api/users/me`           | Update display name        | Yes (JWT)     |
-| POST   | `/api/discogs/authorize`  | Initiate Discogs OAuth     | Yes (JWT)     |
-| POST   | `/api/discogs/callback`   | Complete Discogs OAuth     | Yes (JWT)     |
-| DELETE | `/api/discogs/disconnect` | Disconnect Discogs account | Yes (JWT)     |
-| POST   | `/api/collection/sync`    | Sync Discogs collection    | Yes (JWT)     |
-| GET    | `/api/collection`         | List releases (paginated)  | Yes (JWT)     |
-| GET    | `/api/collection/{id}`    | Get single release         | Yes (JWT)     |
+| Method | Path                                   | Description                | Auth Required |
+|--------|----------------------------------------|----------------------------|---------------|
+| GET    | `/health`                              | Health check               | No            |
+| GET    | `/api/users/me`                        | Get current user profile   | Yes (JWT)     |
+| PATCH  | `/api/users/me`                        | Update display name        | Yes (JWT)     |
+| POST   | `/api/discogs/authorize`               | Initiate Discogs OAuth     | Yes (JWT)     |
+| POST   | `/api/discogs/callback`                | Complete Discogs OAuth     | Yes (JWT)     |
+| DELETE | `/api/discogs/disconnect`              | Disconnect Discogs account | Yes (JWT)     |
+| POST   | `/api/collection/sync`                 | Sync Discogs collection    | Yes (JWT)     |
+| GET    | `/api/collection`                      | List releases (paginated)  | Yes (JWT)     |
+| GET    | `/api/collection/{id}`                 | Get single release         | Yes (JWT)     |
+| GET    | `/api/collection/{id}/tracks`          | Get release tracks (Discogs) | Yes (JWT)   |
+| POST   | `/api/playlists`                       | Create playlist            | Yes (JWT)     |
+| GET    | `/api/playlists`                       | List playlists (paginated) | Yes (JWT)     |
+| GET    | `/api/playlists/{id}`                  | Get playlist with tracks   | Yes (JWT)     |
+| PATCH  | `/api/playlists/{id}`                  | Update playlist            | Yes (JWT)     |
+| DELETE | `/api/playlists/{id}`                  | Delete playlist            | Yes (JWT)     |
+| POST   | `/api/playlists/{id}/tracks`           | Add track to playlist      | Yes (JWT)     |
+| DELETE | `/api/playlists/{id}/tracks/{trackId}` | Remove track from playlist | Yes (JWT)     |
+| PATCH  | `/api/playlists/{id}/tracks/reorder`   | Reorder playlist tracks    | Yes (JWT)     |
 
 ### Authentication
 
@@ -93,6 +102,8 @@ supabase db reset             # Apply all migrations + seed.sql
 Database schema includes:
 - `public.users` table extending `auth.users` with profile data and Discogs integration fields
 - `public.releases` table storing user's synced Discogs collection
+- `public.playlists` table for user playlists with name, description, and tags
+- `public.playlist_tracks` table storing track snapshots (title, artist, duration, position)
 - Row Level Security (RLS) policies for user data access
 - Triggers for automatic profile creation and timestamp updates
 
@@ -188,8 +199,8 @@ make test-coverage     # With coverage reports
 
 ### Current Test Coverage
 
-- **Web:** 32 tests covering auth infrastructure, middleware, routing, Supabase clients, UI components
-- **Core:** 31 tests covering health endpoint, user profile API (GET/PATCH), Discogs OAuth endpoints, and Collection API (sync, list, get)
+- **Web:** 53 tests covering auth infrastructure, middleware, routing, Supabase clients, UI components, and playlists API client
+- **Core:** 46 tests covering health endpoint, user profile API (GET/PATCH), Discogs OAuth endpoints, Collection API (sync, list, get, tracks), and Playlists API (CRUD, tracks)
 
 ## Code style
 
@@ -226,7 +237,12 @@ Tags use `v` prefix (e.g., `v0.2.0`).
 
 ## Current state
 
-Early-stage scaffold (v0.1.0). Infrastructure is fully set up. No application features implemented yet — web has a placeholder Next.js page, core has only a health endpoint, and db has no schema.
+Active development (v0.1.0). Core features implemented:
+- User authentication via Supabase Auth
+- Discogs OAuth integration for collection sync
+- Collection management with paginated list and detail views
+- Playlists feature with track management (add from releases, reorder, remove)
+- Release detail page with on-demand track fetching from Discogs API
 
 ---
 

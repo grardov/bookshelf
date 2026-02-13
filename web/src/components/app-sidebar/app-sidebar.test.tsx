@@ -1,12 +1,16 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { render, screen } from "@testing-library/react";
+import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { AppSidebar } from "./app-sidebar";
 import { useAuth } from "@/contexts/auth-context";
 import { usePathname } from "next/navigation";
+import { listPlaylists } from "@/lib/api/playlists";
 
 vi.mock("@/contexts/auth-context");
 vi.mock("next/navigation");
+vi.mock("@/lib/api/playlists");
+
+const mockListPlaylists = vi.mocked(listPlaylists);
 
 describe("AppSidebar", () => {
   const mockSignOut = vi.fn();
@@ -32,6 +36,15 @@ describe("AppSidebar", () => {
     });
 
     vi.mocked(usePathname).mockReturnValue("/create");
+
+    // Default: return empty playlists
+    mockListPlaylists.mockResolvedValue({
+      items: [],
+      total: 0,
+      page: 1,
+      page_size: 5,
+      has_more: false,
+    });
   });
 
   it("renders logo and brand name", () => {
@@ -143,14 +156,66 @@ describe("AppSidebar", () => {
     expect(mockSignOut).toHaveBeenCalled();
   });
 
-  it("renders user playlists section", () => {
-    const { container } = render(<AppSidebar />);
+  it("renders playlists section header", () => {
+    render(<AppSidebar />);
 
-    // Check for "Playlists" section header (case-insensitive)
+    // Check for "Playlists" section header
     const playlistsHeaders = screen.getAllByText(/playlists/i);
     expect(playlistsHeaders.length).toBeGreaterThan(0);
-    expect(screen.getByText("Late Night Deep House")).toBeInTheDocument();
-    expect(screen.getByText("Sunday Morning Jazz")).toBeInTheDocument();
+  });
+
+  it("shows loading state while fetching playlists", () => {
+    // Keep the promise pending
+    mockListPlaylists.mockImplementation(() => new Promise(() => {}));
+
+    render(<AppSidebar />);
+
+    // Should show skeleton loaders
+    const skeletons = document.querySelectorAll('[data-slot="skeleton"]');
+    expect(skeletons.length).toBeGreaterThan(0);
+  });
+
+  it("shows create playlist button when no playlists exist", async () => {
+    mockListPlaylists.mockResolvedValue({
+      items: [],
+      total: 0,
+      page: 1,
+      page_size: 5,
+      has_more: false,
+    });
+
+    render(<AppSidebar />);
+
+    await waitFor(() => {
+      expect(screen.getByText("Create playlist")).toBeInTheDocument();
+    });
+  });
+
+  it("shows playlists when data is loaded", async () => {
+    mockListPlaylists.mockResolvedValue({
+      items: [
+        {
+          id: "playlist-1",
+          user_id: "user-123",
+          name: "My Awesome Playlist",
+          description: null,
+          tags: [],
+          track_count: 10,
+          created_at: "2024-01-01T00:00:00Z",
+          updated_at: null,
+        },
+      ],
+      total: 1,
+      page: 1,
+      page_size: 5,
+      has_more: false,
+    });
+
+    render(<AppSidebar />);
+
+    await waitFor(() => {
+      expect(screen.getByText("My Awesome Playlist")).toBeInTheDocument();
+    });
   });
 
   it("displays user avatar when avatar_url is provided", () => {
