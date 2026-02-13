@@ -8,7 +8,7 @@ router = APIRouter()
 
 
 @router.get("/me", response_model=User)
-async def get_current_user(user_id: str = Depends(get_current_user_id)):
+def get_current_user(user_id: str = Depends(get_current_user_id)):
     """Get current user profile.
 
     Args:
@@ -46,7 +46,7 @@ async def get_current_user(user_id: str = Depends(get_current_user_id)):
 
 
 @router.patch("/me", response_model=User)
-async def update_current_user(
+def update_current_user(
     update: UpdateProfile,
     user_id: str = Depends(get_current_user_id),
 ):

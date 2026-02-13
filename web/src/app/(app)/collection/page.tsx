@@ -1,99 +1,95 @@
 "use client";
 
-import { useState } from "react";
-import { Plus, Disc3, Search } from "lucide-react";
+import { useState, useEffect, useCallback } from "react";
+import { Disc3, Plus, Search } from "lucide-react";
 import { AppHeader } from "@/components/app-header";
 import { ReleaseCard } from "@/components/release-card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
-
-interface Album {
-  id: string;
-  title: string;
-  artist: string;
-  year: string;
-  genre: string;
-  format: "vinyl" | "cd" | "cassette";
-}
-
-const initialAlbums: Album[] = [
-  {
-    id: "1",
-    title: "Random Access Memories",
-    artist: "Daft Punk",
-    year: "2013",
-    genre: "Electronic",
-    format: "vinyl",
-  },
-  {
-    id: "2",
-    title: "Kind of Blue",
-    artist: "Miles Davis",
-    year: "1959",
-    genre: "Jazz",
-    format: "vinyl",
-  },
-  {
-    id: "3",
-    title: "Discovery",
-    artist: "Daft Punk",
-    year: "2001",
-    genre: "Electronic",
-    format: "vinyl",
-  },
-];
+import { Skeleton } from "@/components/ui/skeleton";
+import { listReleases, type Release } from "@/lib/api/collection";
 
 export default function CollectionPage() {
-  const [albums, setAlbums] = useState<Album[]>(initialAlbums);
+  const [releases, setReleases] = useState<Release[]>([]);
+  const [total, setTotal] = useState(0);
+  const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
-  const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
-  const [newAlbum, setNewAlbum] = useState<Omit<Album, "id">>({
-    title: "",
-    artist: "",
-    year: "",
-    genre: "",
-    format: "vinyl",
-  });
+  const [page, setPage] = useState(1);
+  const [hasMore, setHasMore] = useState(false);
 
-  const filteredAlbums = albums.filter(
-    (album) =>
-      album.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      album.artist.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      album.genre.toLowerCase().includes(searchQuery.toLowerCase())
+  const fetchReleases = useCallback(
+    async (search?: string, pageNum = 1) => {
+      setIsLoading(true);
+      try {
+        const response = await listReleases({
+          page: pageNum,
+          pageSize: 50,
+          sortBy: "artist_name",
+          sortOrder: "asc",
+          search: search || undefined,
+        });
+
+        if (pageNum === 1) {
+          setReleases(response.items);
+        } else {
+          setReleases((prev) => [...prev, ...response.items]);
+        }
+        setTotal(response.total);
+        setHasMore(response.has_more);
+        setPage(pageNum);
+      } catch (err) {
+        console.error("Failed to fetch releases:", err);
+      } finally {
+        setIsLoading(false);
+      }
+    },
+    []
   );
 
-  const handleAddAlbum = () => {
-    if (!newAlbum.title || !newAlbum.artist) return;
+  useEffect(() => {
+    fetchReleases();
+  }, [fetchReleases]);
 
-    const album: Album = {
-      id: Date.now().toString(),
-      ...newAlbum,
-    };
+  useEffect(() => {
+    const timeoutId = setTimeout(() => {
+      fetchReleases(searchQuery, 1);
+    }, 300);
+    return () => clearTimeout(timeoutId);
+  }, [searchQuery, fetchReleases]);
 
-    setAlbums([album, ...albums]);
-    setNewAlbum({
-      title: "",
-      artist: "",
-      year: "",
-      genre: "",
-      format: "vinyl",
-    });
-    setIsAddDialogOpen(false);
+  const handleLoadMore = () => {
+    fetchReleases(searchQuery, page + 1);
   };
 
-  const handleDeleteAlbum = (id: string) => {
-    setAlbums(albums.filter((album) => album.id !== id));
+  const handleAddRelease = () => {
+    // TODO: Implement add release modal/page
+    console.log("Add release clicked");
   };
+
+  // Loading skeleton
+  if (isLoading && releases.length === 0) {
+    return (
+      <main className="flex-1 py-6">
+        <AppHeader title="Collection" />
+        <div className="mb-6 flex items-center justify-between">
+          <Skeleton className="h-5 w-24" />
+          <div className="flex items-center gap-3">
+            <Skeleton className="h-9 w-48" />
+            <Skeleton className="h-9 w-32" />
+          </div>
+        </div>
+        <div className="grid gap-3 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
+          {Array.from({ length: 10 }).map((_, i) => (
+            <div key={i} className="space-y-3">
+              <Skeleton className="aspect-square w-full rounded-md" />
+              <Skeleton className="h-4 w-3/4" />
+              <Skeleton className="h-3 w-1/2" />
+            </div>
+          ))}
+        </div>
+      </main>
+    );
+  }
 
   return (
     <main className="flex-1 py-6">
@@ -101,7 +97,7 @@ export default function CollectionPage() {
 
       <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <p className="text-sm text-[#525252]">
-          {albums.length} {albums.length === 1 ? "album" : "albums"}
+          {total} {total === 1 ? "release" : "releases"}
         </p>
         <div className="flex items-center gap-3">
           <div className="relative">
@@ -111,180 +107,85 @@ export default function CollectionPage() {
             />
             <Input
               type="text"
-              placeholder="Search albums..."
+              placeholder="Search releases..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="h-9 w-48 border-[#2a2a2a] bg-[#141414] pl-9 text-sm text-white placeholder:text-[#525252] focus-visible:ring-primary"
-              aria-label="Search albums"
+              aria-label="Search releases"
             />
           </div>
 
-          <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
-            <DialogTrigger asChild>
-              <Button size="sm" className="gap-2 rounded-full">
-                <Plus className="h-4 w-4" aria-hidden="true" />
-                Add album
-              </Button>
-            </DialogTrigger>
-            <DialogContent className="border-[#2a2a2a] bg-[#0a0a0a]">
-              <DialogHeader>
-                <DialogTitle className="text-white">Add New Album</DialogTitle>
-                <DialogDescription className="text-[#525252]">
-                  Add a new album to your collection.
-                </DialogDescription>
-              </DialogHeader>
-              <div className="grid gap-4 py-4">
-                <div className="grid gap-2">
-                  <Label htmlFor="title" className="text-[#9ca3af]">
-                    Title *
-                  </Label>
-                  <Input
-                    id="title"
-                    value={newAlbum.title}
-                    onChange={(e) =>
-                      setNewAlbum({ ...newAlbum, title: e.target.value })
-                    }
-                    placeholder="Album title"
-                    className="border-[#2a2a2a] bg-[#141414] text-white placeholder:text-[#525252]"
-                  />
-                </div>
-                <div className="grid gap-2">
-                  <Label htmlFor="artist" className="text-[#9ca3af]">
-                    Artist *
-                  </Label>
-                  <Input
-                    id="artist"
-                    value={newAlbum.artist}
-                    onChange={(e) =>
-                      setNewAlbum({ ...newAlbum, artist: e.target.value })
-                    }
-                    placeholder="Artist name"
-                    className="border-[#2a2a2a] bg-[#141414] text-white placeholder:text-[#525252]"
-                  />
-                </div>
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="grid gap-2">
-                    <Label htmlFor="year" className="text-[#9ca3af]">
-                      Year
-                    </Label>
-                    <Input
-                      id="year"
-                      value={newAlbum.year}
-                      onChange={(e) =>
-                        setNewAlbum({ ...newAlbum, year: e.target.value })
-                      }
-                      placeholder="2024"
-                      className="border-[#2a2a2a] bg-[#141414] text-white placeholder:text-[#525252]"
-                    />
-                  </div>
-                  <div className="grid gap-2">
-                    <Label htmlFor="genre" className="text-[#9ca3af]">
-                      Genre
-                    </Label>
-                    <Input
-                      id="genre"
-                      value={newAlbum.genre}
-                      onChange={(e) =>
-                        setNewAlbum({ ...newAlbum, genre: e.target.value })
-                      }
-                      placeholder="Electronic"
-                      className="border-[#2a2a2a] bg-[#141414] text-white placeholder:text-[#525252]"
-                    />
-                  </div>
-                </div>
-                <div className="grid gap-2">
-                  <Label className="text-[#9ca3af]">Format</Label>
-                  <div className="flex gap-2">
-                    {(["vinyl", "cd", "cassette"] as const).map((format) => (
-                      <button
-                        key={format}
-                        type="button"
-                        onClick={() => setNewAlbum({ ...newAlbum, format })}
-                        className={`rounded-full border px-4 py-1.5 text-sm capitalize transition-colors ${
-                          newAlbum.format === format
-                            ? "border-primary bg-primary text-white"
-                            : "border-[#2a2a2a] text-[#9ca3af] hover:border-[#404040]"
-                        }`}
-                      >
-                        {format}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              </div>
-              <DialogFooter>
-                <Button
-                  variant="ghost"
-                  onClick={() => setIsAddDialogOpen(false)}
-                  className="text-[#9ca3af] hover:text-white"
-                >
-                  Cancel
-                </Button>
-                <Button
-                  onClick={handleAddAlbum}
-                  disabled={!newAlbum.title || !newAlbum.artist}
-                  className="bg-primary text-white hover:bg-primary/90"
-                >
-                  Add Album
-                </Button>
-              </DialogFooter>
-            </DialogContent>
-          </Dialog>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleAddRelease}
+            className="gap-2"
+          >
+            <Plus className="h-4 w-4" aria-hidden="true" />
+            Add Release
+          </Button>
         </div>
       </div>
 
       {/* Empty state */}
-      {albums.length === 0 && (
+      {releases.length === 0 && !isLoading && (
         <section className="flex flex-1 flex-col items-center justify-center py-24 text-center">
           <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-full border border-[#2a2a2a] bg-[#141414]">
             <Disc3 className="h-8 w-8 text-[#525252]" aria-hidden="true" />
           </div>
           <h2 className="mb-2 font-heading text-lg font-semibold text-white">
-            Your collection is empty
+            No releases yet
           </h2>
           <p className="mb-6 max-w-sm text-sm text-[#525252]">
-            Start building your vinyl collection by adding your first album.
+            Add releases to your collection manually or sync from Discogs in
+            Settings.
           </p>
-          <Button
-            onClick={() => setIsAddDialogOpen(true)}
-            className="gap-2 bg-primary text-white hover:bg-primary/90"
-          >
-            <Plus className="h-4 w-4" aria-hidden="true" />
-            Add Your First Album
-          </Button>
-        </section>
-      )}
-
-      {/* No search results */}
-      {albums.length > 0 && filteredAlbums.length === 0 && (
-        <section className="flex flex-1 flex-col items-center justify-center py-24 text-center">
-          <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-full border border-[#2a2a2a] bg-[#141414]">
-            <Search className="h-8 w-8 text-[#525252]" aria-hidden="true" />
+          <div className="flex gap-3">
+            <Button onClick={handleAddRelease} className="gap-2">
+              <Plus className="h-4 w-4" aria-hidden="true" />
+              Add Release
+            </Button>
+            <Button variant="outline" asChild>
+              <a href="/settings">Go to Settings</a>
+            </Button>
           </div>
-          <h2 className="mb-2 font-heading text-lg font-semibold text-white">
-            No albums found
-          </h2>
-          <p className="max-w-sm text-sm text-[#525252]">
-            No albums match &ldquo;{searchQuery}&rdquo;. Try a different search
-            term.
-          </p>
         </section>
       )}
 
-      {/* Album grid */}
-      {filteredAlbums.length > 0 && (
-        <section
-          className="grid gap-3 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5"
-          aria-label="Album collection"
-        >
-          {filteredAlbums.map((album) => (
-            <ReleaseCard
-              key={album.id}
-              {...album}
-              onDelete={handleDeleteAlbum}
-            />
-          ))}
-        </section>
+      {/* Release grid */}
+      {releases.length > 0 && (
+        <>
+          <section
+            className="grid gap-3 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5"
+            aria-label="Release collection"
+          >
+            {releases.map((release) => (
+              <ReleaseCard
+                key={release.id}
+                id={release.id}
+                title={release.title}
+                artist={release.artist_name}
+                year={release.year}
+                genre={release.genres[0]}
+                format={release.format || undefined}
+                coverUrl={release.cover_image_url}
+              />
+            ))}
+          </section>
+
+          {/* Load more button */}
+          {hasMore && (
+            <div className="mt-8 flex justify-center">
+              <Button
+                variant="outline"
+                onClick={handleLoadMore}
+                disabled={isLoading}
+              >
+                {isLoading ? "Loading..." : "Load More"}
+              </Button>
+            </div>
+          )}
+        </>
       )}
     </main>
   );

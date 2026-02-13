@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import Image from "next/image";
 import { useRouter, useSearchParams } from "next/navigation";
 import { AppHeader } from "@/components/app-header";
+import { SyncButton } from "@/components/sync-button";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -287,15 +288,25 @@ export default function SettingsPage() {
         </div>
         <div className="border-t border-[#2a2a2a] px-6 py-4">
           {isDiscogsConnected ? (
-            <Button
-              variant="outline"
-              size="sm"
-              className="border-[#2a2a2a]"
-              onClick={handleDisconnectDiscogs}
-              disabled={isDisconnectingDiscogs}
-            >
-              {isDisconnectingDiscogs ? "Disconnecting..." : "Disconnect Discogs"}
-            </Button>
+            <div className="flex items-center gap-3">
+              <SyncButton
+                onSyncComplete={() => {
+                  setDiscogsSuccess(true);
+                  setDiscogsError(null);
+                  setTimeout(() => setDiscogsSuccess(false), 5000);
+                }}
+                onSyncError={(error) => setDiscogsError(error)}
+              />
+              <Button
+                variant="outline"
+                size="sm"
+                className="border-[#2a2a2a]"
+                onClick={handleDisconnectDiscogs}
+                disabled={isDisconnectingDiscogs}
+              >
+                {isDisconnectingDiscogs ? "Disconnecting..." : "Disconnect"}
+              </Button>
+            </div>
           ) : (
             <Button
               variant="outline"

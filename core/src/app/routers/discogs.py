@@ -23,7 +23,7 @@ def _require_discogs_configured() -> None:
 
 
 @router.post("/authorize", response_model=DiscogsAuthorizeResponse)
-async def discogs_authorize(
+def discogs_authorize(
     callback_url: str = Query(
         ...,
         description="Frontend callback URL to redirect after Discogs authorization",
@@ -63,7 +63,7 @@ async def discogs_authorize(
 
 
 @router.post("/callback", response_model=User)
-async def discogs_callback(
+def discogs_callback(
     request: DiscogsCallbackRequest,
     user_id: str = Depends(get_current_user_id),  # noqa: B008
 ):
@@ -135,7 +135,7 @@ async def discogs_callback(
 
 
 @router.delete("/disconnect", response_model=User)
-async def discogs_disconnect(
+def discogs_disconnect(
     user_id: str = Depends(get_current_user_id),  # noqa: B008
 ):
     """Disconnect Discogs account.

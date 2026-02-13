@@ -6,7 +6,7 @@ from app.supabase import get_supabase
 security = HTTPBearer()
 
 
-async def get_current_user_id(
+def get_current_user_id(
     credentials: HTTPAuthorizationCredentials = Depends(security),  # noqa: B008
 ) -> str:
     """Extract and validate user ID from JWT token.

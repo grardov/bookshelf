@@ -1,0 +1,206 @@
+"""Collection API endpoints."""
+
+from fastapi import APIRouter, Depends, HTTPException, Query, status
+
+from app.config import Config
+from app.dependencies import get_current_user_id
+from app.models import PaginatedReleases, Release, SyncSummary
+from app.services.collection import CollectionSyncError, get_collection_service
+from app.supabase import get_supabase
+
+router = APIRouter()
+
+
+def _require_discogs_connected(user_id: str) -> dict:
+    """Get user's Discogs credentials or raise error if not connected.
+
+    Args:
+        user_id: User ID to check
+
+    Returns:
+        User data with Discogs credentials
+
+    Raises:
+        HTTPException: If user not found or Discogs not connected
+    """
+    supabase = get_supabase()
+
+    response = (
+        supabase.table("users")
+        .select("discogs_access_token, discogs_access_token_secret, discogs_username")
+        .eq("id", user_id)
+        .single()
+        .execute()
+    )
+
+    if not response.data:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="User not found",
+        )
+
+    user = response.data
+    has_token = user.get("discogs_access_token", None)
+    has_secret = user.get("discogs_access_token_secret", None)
+    if not has_token or not has_secret:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Discogs account not connected. Please connect first.",
+        )
+
+    return user
+
+
+@router.post("/sync", response_model=SyncSummary)
+def sync_collection(
+    user_id: str = Depends(get_current_user_id),  # noqa: B008
+):
+    """Sync user's Discogs collection to database.
+
+    Fetches the entire collection from Discogs and reconciles with local database:
+    - Adds new releases
+    - Updates existing releases
+    - Removes releases no longer in Discogs collection
+
+    Returns summary of sync operation.
+
+    Args:
+        user_id: Authenticated user ID from JWT
+
+    Returns:
+        Sync summary with added, updated, removed, and total counts
+    """
+    if not Config.is_discogs_configured():
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="Discogs integration is not configured",
+        )
+
+    user = _require_discogs_connected(user_id)
+    service = get_collection_service()
+
+    try:
+        # Fetch from Discogs
+        releases = service.fetch_discogs_collection(
+            user["discogs_access_token"],
+            user["discogs_access_token_secret"],
+        )
+
+        # Sync to database
+        summary = service.sync_to_database(user_id, releases)
+
+        return SyncSummary(**summary)
+
+    except CollectionSyncError as e:
+        raise HTTPException(
+            status_code=status.HTTP_502_BAD_GATEWAY,
+            detail=str(e),
+        ) from e
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to sync collection: {e!s}",
+        ) from e
+
+
+@router.get("", response_model=PaginatedReleases)
+def list_releases(
+    page: int = Query(1, ge=1, description="Page number"),
+    page_size: int = Query(50, ge=1, le=100, description="Items per page"),
+    sort_by: str = Query("artist_name", description="Sort field"),
+    sort_order: str = Query("asc", pattern="^(asc|desc)$", description="Sort order"),
+    search: str | None = Query(None, description="Search in title and artist"),
+    user_id: str = Depends(get_current_user_id),  # noqa: B008
+):
+    """List user's releases with pagination and sorting.
+
+    Args:
+        page: Page number (1-indexed)
+        page_size: Number of items per page (max 100)
+        sort_by: Field to sort by
+        sort_order: Sort direction (asc or desc)
+        search: Optional search query for title/artist
+        user_id: Authenticated user ID from JWT
+
+    Returns:
+        Paginated list of releases
+    """
+    supabase = get_supabase()
+
+    # Calculate offset
+    offset = (page - 1) * page_size
+
+    # Build query
+    query = supabase.table("releases").select("*", count="exact").eq("user_id", user_id)
+
+    # Add search filter
+    if search:
+        query = query.or_(f"title.ilike.%{search}%,artist_name.ilike.%{search}%")
+
+    # Add sorting
+    query = query.order(sort_by, desc=(sort_order == "desc"))
+
+    # Add pagination
+    query = query.range(offset, offset + page_size - 1)
+
+    try:
+        response = query.execute()
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to fetch releases: {e!s}",
+        ) from e
+
+    total = response.count or 0
+    items = response.data or []
+
+    return PaginatedReleases(
+        items=items,
+        total=total,
+        page=page,
+        page_size=page_size,
+        has_more=(offset + len(items)) < total,
+    )
+
+
+@router.get("/{release_id}", response_model=Release)
+def get_release(
+    release_id: str,
+    user_id: str = Depends(get_current_user_id),  # noqa: B008
+):
+    """Get a single release by ID.
+
+    Args:
+        release_id: Release UUID
+        user_id: Authenticated user ID from JWT
+
+    Returns:
+        Release data
+    """
+    supabase = get_supabase()
+
+    try:
+        response = (
+            supabase.table("releases")
+            .select("*")
+            .eq("id", release_id)
+            .eq("user_id", user_id)
+            .single()
+            .execute()
+        )
+    except Exception as e:
+        # single() raises an exception when no rows found
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Release not found",
+        ) from e
+
+    if not response.data:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Release not found",
+        )
+
+    return response.data

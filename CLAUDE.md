@@ -62,6 +62,9 @@ make release-first    # First release (no version bump)
 | POST   | `/api/discogs/authorize`  | Initiate Discogs OAuth     | Yes (JWT)     |
 | POST   | `/api/discogs/callback`   | Complete Discogs OAuth     | Yes (JWT)     |
 | DELETE | `/api/discogs/disconnect` | Disconnect Discogs account | Yes (JWT)     |
+| POST   | `/api/collection/sync`    | Sync Discogs collection    | Yes (JWT)     |
+| GET    | `/api/collection`         | List releases (paginated)  | Yes (JWT)     |
+| GET    | `/api/collection/{id}`    | Get single release         | Yes (JWT)     |
 
 ### Authentication
 
@@ -89,6 +92,7 @@ supabase db reset             # Apply all migrations + seed.sql
 
 Database schema includes:
 - `public.users` table extending `auth.users` with profile data and Discogs integration fields
+- `public.releases` table storing user's synced Discogs collection
 - Row Level Security (RLS) policies for user data access
 - Triggers for automatic profile creation and timestamp updates
 
@@ -185,7 +189,7 @@ make test-coverage     # With coverage reports
 ### Current Test Coverage
 
 - **Web:** 32 tests covering auth infrastructure, middleware, routing, Supabase clients, UI components
-- **Core:** 21 tests covering health endpoint, user profile API (GET/PATCH), and Discogs OAuth endpoints (authorize, callback, disconnect)
+- **Core:** 31 tests covering health endpoint, user profile API (GET/PATCH), Discogs OAuth endpoints, and Collection API (sync, list, get)
 
 ## Code style
 

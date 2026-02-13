@@ -53,3 +53,45 @@ class DiscogsCallbackRequest(BaseModel):
         min_length=1,
         description="Encrypted state from authorization step",
     )
+
+
+class Release(BaseModel):
+    """Release model representing a record in user's collection."""
+
+    id: str
+    user_id: str
+    discogs_release_id: int
+    discogs_instance_id: int
+    title: str
+    artist_name: str
+    year: int | None = None
+    cover_image_url: str | None = None
+    format: str | None = None
+    genres: list[str] = Field(default_factory=list)
+    styles: list[str] = Field(default_factory=list)
+    labels: list[str] = Field(default_factory=list)
+    catalog_number: str | None = None
+    country: str | None = None
+    added_to_discogs_at: datetime | None = None
+    synced_at: datetime
+    created_at: datetime
+    updated_at: datetime | None = None
+
+
+class SyncSummary(BaseModel):
+    """Summary of a collection sync operation."""
+
+    added: int = Field(..., description="Number of new releases added")
+    updated: int = Field(..., description="Number of existing releases updated")
+    removed: int = Field(..., description="Number of releases removed")
+    total: int = Field(..., description="Total releases in collection after sync")
+
+
+class PaginatedReleases(BaseModel):
+    """Paginated list of releases."""
+
+    items: list[Release]
+    total: int
+    page: int
+    page_size: int
+    has_more: bool
