@@ -2,7 +2,13 @@ import { type NextRequest, NextResponse } from "next/server";
 import { updateSession } from "@/lib/supabase/middleware";
 
 // Routes that require authentication
-const protectedRoutes = ["/create", "/collection", "/playlists", "/settings"];
+const protectedRoutes = [
+  "/create",
+  "/collection",
+  "/discogs",
+  "/playlists",
+  "/settings",
+];
 
 // Routes that should redirect to /create if already authenticated
 const authRoutes = ["/login", "/signup"];

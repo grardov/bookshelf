@@ -25,3 +25,31 @@ class UpdateProfile(BaseModel):
         max_length=100,
         description="User's display name (1-100 characters)",
     )
+
+
+class DiscogsAuthorizeResponse(BaseModel):
+    """Response from /api/discogs/authorize endpoint."""
+
+    authorization_url: str = Field(
+        ...,
+        description="Discogs OAuth authorization URL to redirect user to",
+    )
+    state: str = Field(
+        ...,
+        description="Encrypted state containing request token secret",
+    )
+
+
+class DiscogsCallbackRequest(BaseModel):
+    """Request body for /api/discogs/callback endpoint."""
+
+    oauth_verifier: str = Field(
+        ...,
+        min_length=1,
+        description="OAuth verifier from Discogs callback",
+    )
+    state: str = Field(
+        ...,
+        min_length=1,
+        description="Encrypted state from authorization step",
+    )

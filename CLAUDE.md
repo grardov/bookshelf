@@ -54,11 +54,14 @@ make release-first    # First release (no version bump)
 
 ## API endpoints (core)
 
-| Method | Path              | Description              | Auth Required |
-|--------|-------------------|--------------------------|---------------|
-| GET    | `/health`         | Health check             | No            |
-| GET    | `/api/users/me`   | Get current user profile | Yes (JWT)     |
-| PATCH  | `/api/users/me`   | Update display name      | Yes (JWT)     |
+| Method | Path                      | Description                | Auth Required |
+|--------|---------------------------|----------------------------|---------------|
+| GET    | `/health`                 | Health check               | No            |
+| GET    | `/api/users/me`           | Get current user profile   | Yes (JWT)     |
+| PATCH  | `/api/users/me`           | Update display name        | Yes (JWT)     |
+| POST   | `/api/discogs/authorize`  | Initiate Discogs OAuth     | Yes (JWT)     |
+| POST   | `/api/discogs/callback`   | Complete Discogs OAuth     | Yes (JWT)     |
+| DELETE | `/api/discogs/disconnect` | Disconnect Discogs account | Yes (JWT)     |
 
 ### Authentication
 
@@ -93,14 +96,22 @@ Database schema includes:
 
 ### Backend (core)
 
-Create `core/.env` with Supabase credentials:
+Create `core/.env` with Supabase and Discogs credentials:
 
 ```bash
+# Supabase (required)
 SUPABASE_URL=http://127.0.0.1:54321
 SUPABASE_SERVICE_ROLE_KEY=<from supabase status>
+
+# Discogs OAuth 1.0a (optional, for collection sync)
+DISCOGS_CONSUMER_KEY=<from discogs.com/settings/developers>
+DISCOGS_CONSUMER_SECRET=<from discogs.com/settings/developers>
+DISCOGS_USER_AGENT=Bookshelf/0.1.0
+STATE_ENCRYPTION_KEY=<64-char-hex: python -c "import secrets; print(secrets.token_hex(32))">
 ```
 
-Get credentials from `supabase status` after running `supabase start` in the `db/` directory.
+Get Supabase credentials from `supabase status` after running `supabase start` in the `db/` directory.
+Get Discogs credentials from https://www.discogs.com/settings/developers (register a new app).
 
 ### Frontend (web)
 
@@ -174,7 +185,7 @@ make test-coverage     # With coverage reports
 ### Current Test Coverage
 
 - **Web:** 32 tests covering auth infrastructure, middleware, routing, Supabase clients, UI components
-- **Core:** 11 tests covering health endpoint and user profile API (GET/PATCH endpoints with auth)
+- **Core:** 21 tests covering health endpoint, user profile API (GET/PATCH), and Discogs OAuth endpoints (authorize, callback, disconnect)
 
 ## Code style
 
