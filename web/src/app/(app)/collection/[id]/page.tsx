@@ -236,6 +236,7 @@ export default function ReleaseDetailPage() {
             title: selectedTrack.title,
             artist: selectedTrack.artists.join(", ") || release.artist_name,
             duration: selectedTrack.duration || undefined,
+            cover_image_url: release.cover_image_url || undefined,
           }}
         />
       )}

@@ -27,6 +27,7 @@ export interface PlaylistTrack {
   artist: string;
   duration: string | null;
   track_order: number;
+  cover_image_url: string | null;
   created_at: string;
   updated_at: string | null;
 }
@@ -99,6 +100,7 @@ export interface AddTrackData {
   title: string;
   artist: string;
   duration?: string;
+  cover_image_url?: string;
 }
 
 /**

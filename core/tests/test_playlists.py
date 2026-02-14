@@ -52,6 +52,7 @@ def mock_playlist_track():
         "artist": "Test Artist",
         "duration": "6:42",
         "track_order": 1,
+        "cover_image_url": "https://example.com/cover.jpg",
         "created_at": datetime.now().isoformat(),
         "updated_at": datetime.now().isoformat(),
     }
@@ -404,6 +405,46 @@ class TestAddTrack:
         data = response.json()
         assert data["title"] == "Test Track"
         assert data["position"] == "A1"
+
+    @patch("app.routers.playlists.get_playlist_service")
+    @patch("app.dependencies.get_supabase")
+    def test_add_track_with_cover_image(
+        self,
+        mock_dep_supabase,
+        mock_get_service,
+        client,
+        auth_headers,
+        mock_auth_response,
+        mock_playlist_track,
+    ):
+        """Test adding track with cover_image_url."""
+        # Mock auth
+        mock_dep_client = MagicMock()
+        mock_dep_client.auth.get_user.return_value = mock_auth_response
+        mock_dep_supabase.return_value = mock_dep_client
+
+        # Mock service
+        mock_service = MagicMock()
+        mock_service.add_track.return_value = mock_playlist_track
+        mock_get_service.return_value = mock_service
+
+        response = client.post(
+            "/api/playlists/playlist-uuid-123/tracks",
+            headers=auth_headers,
+            json={
+                "release_id": "release-uuid-123",
+                "discogs_release_id": 12345,
+                "position": "A1",
+                "title": "Test Track",
+                "artist": "Test Artist",
+                "duration": "6:42",
+                "cover_image_url": "https://example.com/cover.jpg",
+            },
+        )
+
+        assert response.status_code == 201
+        data = response.json()
+        assert data["cover_image_url"] == "https://example.com/cover.jpg"
 
     @patch("app.routers.playlists.get_playlist_service")
     @patch("app.dependencies.get_supabase")

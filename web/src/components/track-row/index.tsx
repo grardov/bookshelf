@@ -1,1 +1,6 @@
-export { TrackRow, TrackListHeader } from "./track-row";
+export {
+  TrackRow,
+  TrackListHeader,
+  type TrackRowProps,
+  type TrackListHeaderProps,
+} from "./track-row";

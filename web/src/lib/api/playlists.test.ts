@@ -46,6 +46,7 @@ const mockTrack: PlaylistTrack = {
   artist: "Test Artist",
   duration: "5:30",
   track_order: 1,
+  cover_image_url: "https://example.com/cover.jpg",
   created_at: "2024-01-01T00:00:00Z",
   updated_at: null,
 };
@@ -217,6 +218,29 @@ describe("Playlists API", () => {
         }
       );
       expect(result).toEqual(mockTrack);
+    });
+
+    it("includes cover_image_url when provided", async () => {
+      mockApiRequest.mockResolvedValueOnce(mockTrack);
+
+      const data = {
+        release_id: "release-456",
+        discogs_release_id: 12345,
+        position: "A1",
+        title: "Test Track",
+        artist: "Test Artist",
+        duration: "5:30",
+        cover_image_url: "https://example.com/cover.jpg",
+      };
+      await addTrackToPlaylist("playlist-123", data);
+
+      expect(mockApiRequest).toHaveBeenCalledWith(
+        "/api/playlists/playlist-123/tracks",
+        {
+          method: "POST",
+          body: JSON.stringify(data),
+        }
+      );
     });
 
     it("propagates errors from apiRequest", async () => {

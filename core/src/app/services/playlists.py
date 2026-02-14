@@ -263,6 +263,7 @@ class PlaylistService:
             "title": track_data["title"],
             "artist": track_data["artist"],
             "duration": track_data.get("duration"),
+            "cover_image_url": track_data.get("cover_image_url"),
             "track_order": next_order,
         }
 
@@ -298,7 +299,7 @@ class PlaylistService:
             .execute()
         )
 
-        return len(response.data) > 0
+        return response.data is not None
 
     def reorder_tracks(
         self,

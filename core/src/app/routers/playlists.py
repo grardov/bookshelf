@@ -217,6 +217,7 @@ def remove_track_from_playlist(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail="Track not found",
             )
+        # 204 No Content - no return value needed
     except ValueError as e:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,

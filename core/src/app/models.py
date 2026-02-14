@@ -145,6 +145,7 @@ class PlaylistTrack(BaseModel):
     artist: str
     duration: str | None = None
     track_order: int
+    cover_image_url: str | None = None
     created_at: datetime
     updated_at: datetime | None = None
 
@@ -165,6 +166,7 @@ class AddTrackRequest(BaseModel):
     title: str = Field(..., min_length=1)
     artist: str = Field(..., min_length=1)
     duration: str | None = Field(None, description="Duration string e.g., '6:42'")
+    cover_image_url: str | None = Field(None, description="Release cover image URL")
 
 
 class ReorderTracksRequest(BaseModel):

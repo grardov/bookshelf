@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { Play, MoreHorizontal, Disc3 } from "lucide-react";
+import { MoreHorizontal, Disc3 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -13,6 +13,8 @@ import {
 export interface TrackRowProps {
   id: string;
   position?: number;
+  /** Vinyl position like "A1", "B2" - shown alongside position number */
+  trackPosition?: string;
   title: string;
   artist: string;
   album?: string;
@@ -26,13 +28,13 @@ export interface TrackRowProps {
 export function TrackRow({
   id,
   position,
+  trackPosition,
   title,
   artist,
   album,
   duration,
   bpm,
   coverUrl,
-  onPlay,
   menuItems,
 }: TrackRowProps) {
   const hasMenu = menuItems && menuItems.length > 0;
@@ -42,20 +44,14 @@ export function TrackRow({
       {/* Position / Play button */}
       {position !== undefined && (
         <span className="w-8 text-center text-sm text-[#525252]">
-          <span className="group-hover:hidden">
-            {String(position).padStart(2, "0")}
-          </span>
-          <button
-            type="button"
-            onClick={() => onPlay?.(id)}
-            className="hidden group-hover:block"
-            aria-label={`Play ${title}`}
-          >
-            <Play
-              className="mx-auto h-4 w-4 text-primary"
-              aria-hidden="true"
-            />
-          </button>
+          <span>{String(position).padStart(2, "0")}</span>
+        </span>
+      )}
+
+      {/* Track position (vinyl position like A1, B2) */}
+      {trackPosition && (
+        <span className="w-10 text-center text-xs font-medium text-[#525252]">
+          {trackPosition}
         </span>
       )}
 
@@ -137,11 +133,17 @@ export function TrackRow({
 export interface TrackListHeaderProps {
   showAlbum?: boolean;
   showBpm?: boolean;
+  /** Show track position column (A1, B2) */
+  showTrackPosition?: boolean;
+  /** Show drag handle column for sortable lists */
+  showDragHandle?: boolean;
 }
 
 export function TrackListHeader({
   showAlbum = true,
   showBpm = true,
+  showTrackPosition = false,
+  showDragHandle = false,
 }: TrackListHeaderProps) {
   return (
     <>
@@ -149,7 +151,10 @@ export function TrackListHeader({
         className="hidden items-center gap-4 px-3 py-2 text-xs font-medium uppercase tracking-wide text-[#525252] md:flex"
         aria-hidden="true"
       >
+        {/* Drag handle spacer */}
+        {showDragHandle && <span className="w-8" />}
         <span className="w-8 text-center">#</span>
+        {showTrackPosition && <span className="w-10 text-center">Pos</span>}
         <span className="w-10" />
         <span className="flex-1">Title</span>
         {showAlbum && <span className="w-40">Album</span>}

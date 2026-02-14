@@ -4,6 +4,21 @@ import { useState, useEffect, useCallback } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { ArrowLeft, Play, Pencil, Trash2, Loader2, ListMusic } from "lucide-react";
+import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  type DragEndEvent,
+} from "@dnd-kit/core";
+import {
+  arrayMove,
+  SortableContext,
+  sortableKeyboardCoordinates,
+  verticalListSortingStrategy,
+} from "@dnd-kit/sortable";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
@@ -11,7 +26,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Skeleton } from "@/components/ui/skeleton";
-import { TrackRow, TrackListHeader } from "@/components/track-row";
+import { TrackListHeader } from "@/components/track-row";
+import { SortableTrackRow } from "@/components/sortable-track-row";
 import {
   Dialog,
   DialogContent,
@@ -26,6 +42,7 @@ import {
   updatePlaylist,
   deletePlaylist,
   removeTrackFromPlaylist,
+  reorderPlaylistTracks,
   type PlaylistWithTracks,
 } from "@/lib/api/playlists";
 
@@ -40,6 +57,19 @@ export default function PlaylistDetailPage() {
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [isReordering, setIsReordering] = useState(false);
+
+  // DnD sensors
+  const sensors = useSensors(
+    useSensor(PointerSensor, {
+      activationConstraint: {
+        distance: 8,
+      },
+    }),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    })
+  );
 
   // Edit form state
   const [editName, setEditName] = useState("");
@@ -131,6 +161,35 @@ export default function PlaylistDetailPage() {
       );
     } catch (err) {
       console.error("Failed to remove track:", err);
+    }
+  };
+
+  const handleDragEnd = async (event: DragEndEvent) => {
+    const { active, over } = event;
+
+    if (!over || active.id === over.id || !playlist) {
+      return;
+    }
+
+    const oldIndex = playlist.tracks.findIndex((t) => t.id === active.id);
+    const newIndex = playlist.tracks.findIndex((t) => t.id === over.id);
+
+    // Optimistic update
+    const newTracks = arrayMove(playlist.tracks, oldIndex, newIndex);
+    setPlaylist((prev) => (prev ? { ...prev, tracks: newTracks } : null));
+
+    // Persist to backend
+    setIsReordering(true);
+    try {
+      const trackIds = newTracks.map((t) => t.id);
+      const updatedTracks = await reorderPlaylistTracks(playlistId, trackIds);
+      setPlaylist((prev) => (prev ? { ...prev, tracks: updatedTracks } : null));
+    } catch (err) {
+      console.error("Failed to reorder tracks:", err);
+      // Revert on error
+      fetchPlaylist();
+    } finally {
+      setIsReordering(false);
     }
   };
 
@@ -255,33 +314,58 @@ export default function PlaylistDetailPage() {
           </div>
         ) : (
           <>
-            <TrackListHeader showAlbum={false} showBpm={false} />
+            <TrackListHeader
+              showAlbum={false}
+              showBpm={false}
+              showDragHandle
+              showTrackPosition
+            />
             <Separator className="mb-1 hidden bg-[#2a2a2a] md:block" />
 
-            <ul className="space-y-0.5" role="list">
-              {playlist.tracks.map((track) => (
-                <TrackRow
-                  key={track.id}
-                  id={track.id}
-                  position={track.track_order}
-                  title={track.title}
-                  artist={track.artist}
-                  duration={track.duration || "--:--"}
-                  menuItems={[
-                    {
-                      label: "Remove from playlist",
-                      onClick: () => handleRemoveTrack(track.id),
-                      destructive: true,
-                    },
-                    {
-                      label: "View release",
-                      onClick: () =>
-                        router.push(`/collection/${track.release_id}`),
-                    },
-                  ]}
-                />
-              ))}
-            </ul>
+            <DndContext
+              sensors={sensors}
+              collisionDetection={closestCenter}
+              onDragEnd={handleDragEnd}
+            >
+              <SortableContext
+                items={playlist.tracks.map((t) => t.id)}
+                strategy={verticalListSortingStrategy}
+              >
+                <ul className="space-y-0.5" role="list">
+                  {playlist.tracks.map((track) => (
+                    <SortableTrackRow
+                      key={track.id}
+                      id={track.id}
+                      position={track.track_order}
+                      trackPosition={track.position}
+                      title={track.title}
+                      artist={track.artist}
+                      duration={track.duration || "--:--"}
+                      coverUrl={track.cover_image_url || undefined}
+                      menuItems={[
+                        {
+                          label: "Remove from playlist",
+                          onClick: () => handleRemoveTrack(track.id),
+                          destructive: true,
+                        },
+                        {
+                          label: "View release",
+                          onClick: () =>
+                            router.push(`/collection/${track.release_id}`),
+                        },
+                      ]}
+                    />
+                  ))}
+                </ul>
+              </SortableContext>
+            </DndContext>
+
+            {isReordering && (
+              <div className="mt-2 flex items-center justify-center text-xs text-[#525252]">
+                <Loader2 className="mr-1 h-3 w-3 animate-spin" />
+                Saving order...
+              </div>
+            )}
           </>
         )}
       </section>
