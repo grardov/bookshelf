@@ -4,6 +4,19 @@ import { AuthProvider, useAuth } from "./auth-context";
 import { createClient } from "@/lib/supabase/client";
 import type { User, Session } from "@supabase/supabase-js";
 
+const mockRouter = {
+  push: vi.fn(),
+  replace: vi.fn(),
+  refresh: vi.fn(),
+  back: vi.fn(),
+  forward: vi.fn(),
+  prefetch: vi.fn(),
+};
+
+vi.mock("next/navigation", () => ({
+  useRouter: () => mockRouter,
+}));
+
 vi.mock("@/lib/supabase/client");
 
 describe("AuthContext", () => {
@@ -45,6 +58,7 @@ describe("AuthContext", () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
+    mockRouter.push.mockClear();
     vi.mocked(createClient).mockReturnValue(mockSupabase as any);
     mockSupabase.auth.onAuthStateChange.mockReturnValue({
       data: { subscription: { unsubscribe: vi.fn() } },
@@ -141,6 +155,7 @@ describe("AuthContext", () => {
         expect(result.current.user).toBeNull();
         expect(result.current.profile).toBeNull();
         expect(result.current.session).toBeNull();
+        expect(mockRouter.push).toHaveBeenCalledWith("/login");
       });
     });
 

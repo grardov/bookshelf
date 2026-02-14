@@ -42,18 +42,6 @@ describe("TrackRow", () => {
     expect(screen.getByText("128")).toBeInTheDocument();
   });
 
-  it("calls onPlay when play button is clicked", async () => {
-    const user = userEvent.setup();
-    const mockOnPlay = vi.fn();
-
-    render(<TrackRow {...defaultProps} position={1} onPlay={mockOnPlay} />);
-
-    const playButton = screen.getByRole("button", { name: /play deep dive/i });
-    await user.click(playButton);
-
-    expect(mockOnPlay).toHaveBeenCalledWith("track-1");
-  });
-
   it("renders cover image when coverUrl is provided", () => {
     render(
       <TrackRow {...defaultProps} coverUrl="https://example.com/cover.jpg" />

@@ -43,8 +43,8 @@ export function LoginForm() {
       return;
     }
 
-    router.push(redirectTo);
-    router.refresh();
+    // Use replace to prevent back button returning to login page
+    router.replace(redirectTo);
   };
 
   return (

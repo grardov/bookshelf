@@ -9,16 +9,14 @@ vi.mock("@/lib/supabase/client");
 vi.mock("next/navigation");
 
 describe("SignupForm", () => {
-  const mockPush = vi.fn();
-  const mockRefresh = vi.fn();
+  const mockReplace = vi.fn();
   const mockSignUp = vi.fn();
 
   beforeEach(() => {
     vi.clearAllMocks();
 
     vi.mocked(useRouter).mockReturnValue({
-      push: mockPush,
-      refresh: mockRefresh,
+      replace: mockReplace,
     } as any);
 
     vi.mocked(createClient).mockReturnValue({
@@ -72,8 +70,7 @@ describe("SignupForm", () => {
       });
     });
 
-    expect(mockPush).toHaveBeenCalledWith("/create");
-    expect(mockRefresh).toHaveBeenCalled();
+    expect(mockReplace).toHaveBeenCalledWith("/create");
   });
 
   it("displays error when passwords do not match", async () => {
@@ -130,7 +127,7 @@ describe("SignupForm", () => {
       expect(screen.getByText("User already registered")).toBeInTheDocument();
     });
 
-    expect(mockPush).not.toHaveBeenCalled();
+    expect(mockReplace).not.toHaveBeenCalled();
   });
 
   it("disables form inputs while loading", async () => {

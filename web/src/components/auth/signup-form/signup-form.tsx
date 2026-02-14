@@ -57,8 +57,8 @@ export function SignupForm() {
     }
 
     // Since email confirmation is disabled, user is immediately signed in
-    router.push("/create");
-    router.refresh();
+    // Use replace to prevent back button returning to signup page
+    router.replace("/create");
   };
 
   return (

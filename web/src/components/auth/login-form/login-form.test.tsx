@@ -9,16 +9,14 @@ vi.mock("@/lib/supabase/client");
 vi.mock("next/navigation");
 
 describe("LoginForm", () => {
-  const mockPush = vi.fn();
-  const mockRefresh = vi.fn();
+  const mockReplace = vi.fn();
   const mockSignInWithPassword = vi.fn();
 
   beforeEach(() => {
     vi.clearAllMocks();
 
     vi.mocked(useRouter).mockReturnValue({
-      push: mockPush,
-      refresh: mockRefresh,
+      replace: mockReplace,
     } as any);
 
     vi.mocked(useSearchParams).mockReturnValue({
@@ -71,8 +69,7 @@ describe("LoginForm", () => {
       });
     });
 
-    expect(mockPush).toHaveBeenCalledWith("/");
-    expect(mockRefresh).toHaveBeenCalled();
+    expect(mockReplace).toHaveBeenCalledWith("/");
   });
 
   it("redirects to redirectTo parameter after successful login", async () => {
@@ -90,7 +87,7 @@ describe("LoginForm", () => {
     await user.click(screen.getByRole("button", { name: /log in/i }));
 
     await waitFor(() => {
-      expect(mockPush).toHaveBeenCalledWith("/playlists");
+      expect(mockReplace).toHaveBeenCalledWith("/playlists");
     });
   });
 
@@ -111,7 +108,7 @@ describe("LoginForm", () => {
       expect(screen.getByText("Invalid login credentials")).toBeInTheDocument();
     });
 
-    expect(mockPush).not.toHaveBeenCalled();
+    expect(mockReplace).not.toHaveBeenCalled();
   });
 
   it("disables form inputs while loading", async () => {
