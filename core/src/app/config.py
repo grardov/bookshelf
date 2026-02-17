@@ -24,6 +24,13 @@ class Config:
     # State encryption key for OAuth flow (required if Discogs is configured)
     STATE_ENCRYPTION_KEY: str = os.getenv("STATE_ENCRYPTION_KEY", "")
 
+    # CORS allowed origins (comma-separated)
+    ALLOWED_ORIGINS: list[str] = [
+        origin.strip()
+        for origin in os.getenv("ALLOWED_ORIGINS", "http://localhost:3000,http://localhost:3001").split(",")
+        if origin.strip()
+    ]
+
     @classmethod
     def validate(cls) -> None:
         """Validate that required environment variables are set."""
