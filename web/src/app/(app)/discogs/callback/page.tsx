@@ -1,13 +1,13 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Loader2 } from "lucide-react";
 import { completeDiscogsAuth } from "@/lib/api/discogs";
 import { useAuth } from "@/contexts/auth-context";
 import { Button } from "@/components/ui/button";
 
-export default function DiscogsCallbackPage() {
+function DiscogsCallbackContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { refreshProfile } = useAuth();
@@ -40,7 +40,7 @@ export default function DiscogsCallbackPage() {
         setError(
           err instanceof Error
             ? err.message
-            : "Failed to connect Discogs account"
+            : "Failed to connect Discogs account",
         );
       }
     };
@@ -69,5 +69,22 @@ export default function DiscogsCallbackPage() {
       <Loader2 className="h-8 w-8 animate-spin text-primary" />
       <p className="mt-4 text-[#525252]">Connecting your Discogs account...</p>
     </main>
+  );
+}
+
+export default function DiscogsCallbackPage() {
+  return (
+    <Suspense
+      fallback={
+        <main className="flex min-h-[60vh] flex-col items-center justify-center">
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+          <p className="mt-4 text-[#525252]">
+            Connecting your Discogs account...
+          </p>
+        </main>
+      }
+    >
+      <DiscogsCallbackContent />
+    </Suspense>
   );
 }
