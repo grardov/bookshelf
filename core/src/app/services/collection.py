@@ -122,6 +122,7 @@ class CollectionService:
             "labels": labels,
             "catalog_number": catalog_number,
             "country": None,  # Not available in basic_information
+            "discogs_metadata": info,
             "added_to_discogs_at": added_at,
             "synced_at": datetime.now(UTC).isoformat(),
         }
@@ -186,6 +187,7 @@ class CollectionService:
             "labels": labels,
             "catalog_number": catalog_number,
             "country": country,
+            "discogs_metadata": getattr(release, "data", None),
             "added_to_discogs_at": added_at,
             "synced_at": datetime.now(UTC).isoformat(),
         }

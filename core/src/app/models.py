@@ -1,4 +1,5 @@
 from datetime import datetime
+from typing import Any
 
 from pydantic import BaseModel, Field
 
@@ -72,6 +73,7 @@ class Release(BaseModel):
     labels: list[str] = Field(default_factory=list)
     catalog_number: str | None = None
     country: str | None = None
+    discogs_metadata: dict[str, Any] | None = None
     added_to_discogs_at: datetime | None = None
     synced_at: datetime
     created_at: datetime
@@ -207,3 +209,10 @@ class ReleaseTracksResponse(BaseModel):
     title: str
     artist_name: str
     tracks: list[DiscogsTrack]
+    # Enriched metadata from full Discogs release
+    notes: str | None = None
+    country: str | None = None
+    genres: list[str] = Field(default_factory=list)
+    styles: list[str] = Field(default_factory=list)
+    labels: list[dict[str, Any]] | None = None
+    formats: list[dict[str, Any]] | None = None

@@ -1,5 +1,6 @@
 """Collection API endpoints."""
 
+import logging
 from typing import Any, cast
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
@@ -9,6 +10,8 @@ from app.dependencies import get_current_user_id
 from app.models import PaginatedReleases, Release, ReleaseTracksResponse, SyncSummary
 from app.services.collection import CollectionSyncError, get_collection_service
 from app.supabase import get_supabase
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter()
 
@@ -137,10 +140,16 @@ def list_releases(
     # Calculate offset
     offset = (page - 1) * page_size
 
-    # Build query
+    # Build query (exclude discogs_metadata to keep list responses lean)
+    release_list_columns = (
+        "id, user_id, discogs_release_id, discogs_instance_id, "
+        "title, artist_name, year, cover_image_url, format, "
+        "genres, styles, labels, catalog_number, country, "
+        "added_to_discogs_at, synced_at, created_at, updated_at"
+    )
     query = (
         supabase.table("releases")
-        .select("*", count="exact")  # type: ignore[arg-type]
+        .select(release_list_columns, count="exact")  # type: ignore[arg-type]
         .eq("user_id", user_id)
     )
 
@@ -294,12 +303,76 @@ def get_release_tracks(
                 }
             )
 
+        # Extract full release data for metadata enrichment
+        full_release_data = getattr(discogs_release, "data", None)
+
+        # Persist enriched metadata to DB (fire-and-forget)
+        if full_release_data and isinstance(full_release_data, dict):
+            update_data: dict[str, Any] = {
+                "discogs_metadata": full_release_data,
+            }
+            country = full_release_data.get("country")
+            if country:
+                update_data["country"] = country
+
+            try:
+                supabase.table("releases").update(update_data).eq(
+                    "id", release["id"]
+                ).eq("user_id", user_id).execute()
+            except Exception:
+                logger.warning(
+                    "Failed to update discogs_metadata for release %s",
+                    release["id"],
+                )
+
+        # Extract enriched metadata for response
+        notes = None
+        enriched_labels = None
+        enriched_formats = None
+        enriched_genres: list[str] = []
+        enriched_styles: list[str] = []
+        enriched_country = None
+
+        if full_release_data and isinstance(full_release_data, dict):
+            notes = full_release_data.get("notes")
+            enriched_country = full_release_data.get("country")
+            enriched_genres = full_release_data.get("genres", [])
+            enriched_styles = full_release_data.get("styles", [])
+
+            raw_labels = full_release_data.get("labels", [])
+            if raw_labels:
+                enriched_labels = [
+                    {
+                        "name": lbl.get("name", ""),
+                        "catno": lbl.get("catno", ""),
+                        "entity_type_name": lbl.get("entity_type_name", ""),
+                    }
+                    for lbl in raw_labels
+                ]
+
+            raw_formats = full_release_data.get("formats", [])
+            if raw_formats:
+                enriched_formats = [
+                    {
+                        "name": fmt.get("name", ""),
+                        "qty": fmt.get("qty", "1"),
+                        "descriptions": fmt.get("descriptions", []),
+                    }
+                    for fmt in raw_formats
+                ]
+
         return ReleaseTracksResponse(
             release_id=release["id"],
             discogs_release_id=release["discogs_release_id"],
             title=release["title"],
             artist_name=release["artist_name"],
             tracks=tracks,
+            notes=notes,
+            country=enriched_country,
+            genres=enriched_genres,
+            styles=enriched_styles,
+            labels=enriched_labels,
+            formats=enriched_formats,
         )
 
     except HTTPException:

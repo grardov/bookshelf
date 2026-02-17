@@ -66,6 +66,7 @@ def mock_releases():
             "labels": ["Test Label"],
             "catalog_number": "TL001",
             "country": "US",
+            "discogs_metadata": {"id": 123, "title": "Test Album"},
             "added_to_discogs_at": datetime.now().isoformat(),
             "synced_at": datetime.now().isoformat(),
         }
@@ -90,6 +91,7 @@ def mock_db_release():
         "labels": ["Test Label"],
         "catalog_number": "TL001",
         "country": "US",
+        "discogs_metadata": {"id": 123, "title": "Test Album"},
         "added_to_discogs_at": datetime.now().isoformat(),
         "synced_at": datetime.now().isoformat(),
         "created_at": datetime.now().isoformat(),
@@ -445,3 +447,175 @@ class TestGetRelease:
 
         assert response.status_code == 404
         assert "not found" in response.json()["detail"].lower()
+
+
+class TestGetReleaseTracks:
+    """Tests for GET /api/collection/{id}/tracks endpoint."""
+
+    @patch("app.routers.collection.Config")
+    @patch("app.routers.collection.get_supabase")
+    @patch("app.routers.collection.get_collection_service")
+    @patch("app.dependencies.get_supabase")
+    def test_get_tracks_returns_enriched_metadata(
+        self,
+        mock_dep_supabase,
+        mock_get_service,
+        mock_router_supabase,
+        mock_config,
+        client,
+        auth_headers,
+        mock_auth_response,
+        mock_user_with_discogs,
+        mock_db_release,
+    ):
+        """Test GET /api/collection/{id}/tracks returns enriched metadata."""
+        mock_config.is_discogs_configured.return_value = True
+
+        # Mock auth validation
+        mock_dep_client = MagicMock()
+        mock_dep_client.auth.get_user.return_value = mock_auth_response
+        mock_dep_supabase.return_value = mock_dep_client
+
+        # Mock Supabase - release query and user query
+        mock_router_client = MagicMock()
+
+        # First call: release query, Second call: user query
+        mock_release_response = MagicMock()
+        mock_release_response.data = mock_db_release
+
+        mock_user_response = MagicMock()
+        mock_user_response.data = mock_user_with_discogs
+
+        # Chain for select().eq().eq().single().execute()
+        select_chain = MagicMock()
+        select_chain.eq.return_value.eq.return_value.single.return_value.execute.return_value = (
+            mock_release_response
+        )
+        select_chain.eq.return_value.single.return_value.execute.return_value = (
+            mock_user_response
+        )
+        mock_router_client.table.return_value.select.return_value = select_chain
+        # Mock update chain for metadata persistence
+        mock_router_client.table.return_value.update.return_value.eq.return_value.eq.return_value.execute.return_value = (
+            MagicMock()
+        )
+        mock_router_supabase.return_value = mock_router_client
+
+        # Mock Discogs client and release
+        mock_discogs_release = MagicMock()
+        mock_track = MagicMock()
+        mock_track.position = "A1"
+        mock_track.title = "Test Track"
+        mock_track.duration = "3:45"
+        mock_track.artists = None
+        mock_discogs_release.tracklist = [mock_track]
+        mock_discogs_release.data = {
+            "id": 123,
+            "title": "Test Album",
+            "notes": "A great album",
+            "country": "US",
+            "genres": ["Electronic"],
+            "styles": ["House", "Deep House"],
+            "labels": [
+                {"name": "Test Label", "catno": "TL001", "entity_type_name": "Label"}
+            ],
+            "formats": [
+                {"name": "Vinyl", "qty": "1", "descriptions": ["LP", "Album"]}
+            ],
+        }
+
+        mock_service = MagicMock()
+        mock_service._create_authenticated_client.return_value.release.return_value = (
+            mock_discogs_release
+        )
+        mock_get_service.return_value = mock_service
+
+        response = client.get(
+            "/api/collection/release-uuid-123/tracks",
+            headers=auth_headers,
+        )
+
+        assert response.status_code == 200
+        data = response.json()
+        assert data["notes"] == "A great album"
+        assert data["country"] == "US"
+        assert data["genres"] == ["Electronic"]
+        assert data["styles"] == ["House", "Deep House"]
+        assert data["labels"] == [
+            {"name": "Test Label", "catno": "TL001", "entity_type_name": "Label"}
+        ]
+        assert data["formats"] == [
+            {"name": "Vinyl", "qty": "1", "descriptions": ["LP", "Album"]}
+        ]
+        assert len(data["tracks"]) == 1
+        assert data["tracks"][0]["title"] == "Test Track"
+
+    @patch("app.routers.collection.Config")
+    @patch("app.routers.collection.get_supabase")
+    @patch("app.routers.collection.get_collection_service")
+    @patch("app.dependencies.get_supabase")
+    def test_get_tracks_handles_missing_metadata(
+        self,
+        mock_dep_supabase,
+        mock_get_service,
+        mock_router_supabase,
+        mock_config,
+        client,
+        auth_headers,
+        mock_auth_response,
+        mock_user_with_discogs,
+        mock_db_release,
+    ):
+        """Test tracks endpoint handles missing release data gracefully."""
+        mock_config.is_discogs_configured.return_value = True
+
+        mock_dep_client = MagicMock()
+        mock_dep_client.auth.get_user.return_value = mock_auth_response
+        mock_dep_supabase.return_value = mock_dep_client
+
+        mock_router_client = MagicMock()
+        mock_release_response = MagicMock()
+        mock_release_response.data = mock_db_release
+        mock_user_response = MagicMock()
+        mock_user_response.data = mock_user_with_discogs
+
+        select_chain = MagicMock()
+        select_chain.eq.return_value.eq.return_value.single.return_value.execute.return_value = (
+            mock_release_response
+        )
+        select_chain.eq.return_value.single.return_value.execute.return_value = (
+            mock_user_response
+        )
+        mock_router_client.table.return_value.select.return_value = select_chain
+        mock_router_supabase.return_value = mock_router_client
+
+        # Mock Discogs release with no .data attribute
+        mock_discogs_release = MagicMock(spec=[])
+        mock_discogs_release.tracklist = []
+        # No .data attribute since spec=[] excludes it
+
+        mock_service = MagicMock()
+        mock_service._create_authenticated_client.return_value.release.return_value = (
+            mock_discogs_release
+        )
+        mock_get_service.return_value = mock_service
+
+        response = client.get(
+            "/api/collection/release-uuid-123/tracks",
+            headers=auth_headers,
+        )
+
+        assert response.status_code == 200
+        data = response.json()
+        assert data["notes"] is None
+        assert data["country"] is None
+        assert data["genres"] == []
+        assert data["styles"] == []
+        assert data["labels"] is None
+        assert data["formats"] is None
+
+    def test_get_tracks_unauthorized(self, client):
+        """Test GET /api/collection/{id}/tracks without authentication."""
+        response = client.get("/api/collection/release-uuid-123/tracks")
+
+        assert response.status_code == 401

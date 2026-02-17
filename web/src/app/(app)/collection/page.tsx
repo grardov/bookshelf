@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { Disc3, Plus, Search } from "lucide-react";
+import { Disc3, Search } from "lucide-react";
 import { AppHeader } from "@/components/app-header";
 import { ReleaseCard } from "@/components/release-card";
 import { Button } from "@/components/ui/button";
@@ -17,34 +17,31 @@ export default function CollectionPage() {
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(false);
 
-  const fetchReleases = useCallback(
-    async (search?: string, pageNum = 1) => {
-      setIsLoading(true);
-      try {
-        const response = await listReleases({
-          page: pageNum,
-          pageSize: 50,
-          sortBy: "artist_name",
-          sortOrder: "asc",
-          search: search || undefined,
-        });
+  const fetchReleases = useCallback(async (search?: string, pageNum = 1) => {
+    setIsLoading(true);
+    try {
+      const response = await listReleases({
+        page: pageNum,
+        pageSize: 50,
+        sortBy: "artist_name",
+        sortOrder: "asc",
+        search: search || undefined,
+      });
 
-        if (pageNum === 1) {
-          setReleases(response.items);
-        } else {
-          setReleases((prev) => [...prev, ...response.items]);
-        }
-        setTotal(response.total);
-        setHasMore(response.has_more);
-        setPage(pageNum);
-      } catch (err) {
-        console.error("Failed to fetch releases:", err);
-      } finally {
-        setIsLoading(false);
+      if (pageNum === 1) {
+        setReleases(response.items);
+      } else {
+        setReleases((prev) => [...prev, ...response.items]);
       }
-    },
-    []
-  );
+      setTotal(response.total);
+      setHasMore(response.has_more);
+      setPage(pageNum);
+    } catch (err) {
+      console.error("Failed to fetch releases:", err);
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
 
   useEffect(() => {
     fetchReleases();
@@ -59,11 +56,6 @@ export default function CollectionPage() {
 
   const handleLoadMore = () => {
     fetchReleases(searchQuery, page + 1);
-  };
-
-  const handleAddRelease = () => {
-    // TODO: Implement add release modal/page
-    console.log("Add release clicked");
   };
 
   // Loading skeleton
@@ -114,16 +106,6 @@ export default function CollectionPage() {
               aria-label="Search releases"
             />
           </div>
-
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={handleAddRelease}
-            className="gap-2"
-          >
-            <Plus className="h-4 w-4" aria-hidden="true" />
-            Add Release
-          </Button>
         </div>
       </div>
 
@@ -141,10 +123,6 @@ export default function CollectionPage() {
             Settings.
           </p>
           <div className="flex gap-3">
-            <Button onClick={handleAddRelease} className="gap-2">
-              <Plus className="h-4 w-4" aria-hidden="true" />
-              Add Release
-            </Button>
             <Button variant="outline" asChild>
               <a href="/settings">Go to Settings</a>
             </Button>
@@ -156,7 +134,7 @@ export default function CollectionPage() {
       {releases.length > 0 && (
         <>
           <section
-            className="grid gap-3 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5"
+            className="grid gap-3 grid-cols-2 sm:grid-cols-3 lg:grid-cols-4"
             aria-label="Release collection"
           >
             {releases.map((release) => (

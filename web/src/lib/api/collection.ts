@@ -18,6 +18,7 @@ export interface Release {
   labels: string[];
   catalog_number: string | null;
   country: string | null;
+  discogs_metadata: Record<string, unknown> | null;
   added_to_discogs_at: string | null;
   synced_at: string;
   created_at: string;

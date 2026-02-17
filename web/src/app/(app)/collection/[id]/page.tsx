@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
@@ -8,13 +8,33 @@ import { ArrowLeft, Disc3, ListMusic, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from "@/components/ui/dialog";
 import { TrackRow, TrackListHeader } from "@/components/track-row";
 import { AddToPlaylistDialog } from "@/components/add-to-playlist-dialog";
 import { getRelease, type Release } from "@/lib/api/collection";
 import {
   getReleaseTracks,
   type DiscogsTrack,
+  type DiscogsLabel,
+  type DiscogsFormat,
 } from "@/lib/api/playlists";
+
+const MAX_NOTE_PARAGRAPHS = 3;
+
+interface EnrichedMetadata {
+  notes: string | null;
+  country: string | null;
+  genres: string[];
+  styles: string[];
+  labels: DiscogsLabel[] | null;
+  formats: DiscogsFormat[] | null;
+}
 
 export default function ReleaseDetailPage() {
   const params = useParams();
@@ -23,6 +43,8 @@ export default function ReleaseDetailPage() {
 
   const [release, setRelease] = useState<Release | null>(null);
   const [tracks, setTracks] = useState<DiscogsTrack[]>([]);
+  const [enrichedMetadata, setEnrichedMetadata] =
+    useState<EnrichedMetadata | null>(null);
   const [isLoadingRelease, setIsLoadingRelease] = useState(true);
   const [isLoadingTracks, setIsLoadingTracks] = useState(false);
   const [tracksError, setTracksError] = useState<string | null>(null);
@@ -30,6 +52,9 @@ export default function ReleaseDetailPage() {
   // Add to playlist dialog state
   const [selectedTrack, setSelectedTrack] = useState<DiscogsTrack | null>(null);
   const [addToPlaylistOpen, setAddToPlaylistOpen] = useState(false);
+
+  // Notes dialog state
+  const [notesDialogOpen, setNotesDialogOpen] = useState(false);
 
   // Fetch release metadata
   useEffect(() => {
@@ -57,6 +82,14 @@ export default function ReleaseDetailPage() {
     try {
       const data = await getReleaseTracks(releaseId);
       setTracks(data.tracks);
+      setEnrichedMetadata({
+        notes: data.notes,
+        country: data.country,
+        genres: data.genres,
+        styles: data.styles,
+        labels: data.labels,
+        formats: data.formats,
+      });
     } catch (err) {
       console.error("Failed to fetch tracks:", err);
       setTracksError("Unable to load tracks. Please try again.");
@@ -75,6 +108,17 @@ export default function ReleaseDetailPage() {
     setSelectedTrack(track);
     setAddToPlaylistOpen(true);
   };
+
+  // Split notes into paragraphs (must be above early returns to respect Rules of Hooks)
+  const displayNotes = enrichedMetadata?.notes;
+  const notesParagraphs = useMemo(() => {
+    if (!displayNotes) return [];
+    return displayNotes.split(/\n\s*\n/).filter((p) => p.trim());
+  }, [displayNotes]);
+  const isNotesTruncated = notesParagraphs.length > MAX_NOTE_PARAGRAPHS;
+  const truncatedParagraphs = isNotesTruncated
+    ? notesParagraphs.slice(0, MAX_NOTE_PARAGRAPHS)
+    : notesParagraphs;
 
   if (isLoadingRelease) {
     return (
@@ -95,6 +139,17 @@ export default function ReleaseDetailPage() {
   if (!release) {
     return null;
   }
+
+  // Prefer enriched data from tracks response, fall back to DB data
+  const displayGenres = enrichedMetadata?.genres?.length
+    ? enrichedMetadata.genres
+    : release.genres;
+  const displayStyles = enrichedMetadata?.styles?.length
+    ? enrichedMetadata.styles
+    : release.styles;
+  const displayCountry = enrichedMetadata?.country || release.country;
+  const displayFormats = enrichedMetadata?.formats;
+  const displayLabels = enrichedMetadata?.labels;
 
   return (
     <main className="flex-1 py-6">
@@ -134,6 +189,28 @@ export default function ReleaseDetailPage() {
           </h1>
           <p className="mt-2 text-lg text-[#9ca3af]">{release.artist_name}</p>
 
+          {notesParagraphs.length > 0 && (
+            <div className="mt-3">
+              {truncatedParagraphs.map((paragraph, i) => (
+                <p
+                  key={i}
+                  className="mt-1 text-sm leading-relaxed text-[#9ca3af] first:mt-0"
+                >
+                  {paragraph.trim()}
+                </p>
+              ))}
+              {isNotesTruncated && (
+                <button
+                  type="button"
+                  onClick={() => setNotesDialogOpen(true)}
+                  className="mt-1 text-sm text-primary hover:underline"
+                >
+                  Read more
+                </button>
+              )}
+            </div>
+          )}
+
           <div className="mt-4 flex flex-wrap items-center gap-2">
             {release.year && (
               <Badge
@@ -143,26 +220,74 @@ export default function ReleaseDetailPage() {
                 {release.year}
               </Badge>
             )}
-            {release.format && (
+            {displayFormats
+              ? displayFormats.map((fmt, i) => {
+                  const desc = fmt.descriptions?.length
+                    ? ` (${fmt.descriptions.join(", ")})`
+                    : "";
+                  const qty =
+                    fmt.qty && parseInt(fmt.qty) > 1 ? `${fmt.qty}x` : "";
+                  return (
+                    <Badge
+                      key={i}
+                      variant="secondary"
+                      className="border-[#2a2a2a] bg-[#1a1a1a]"
+                    >
+                      {qty}
+                      {fmt.name}
+                      {desc}
+                    </Badge>
+                  );
+                })
+              : release.format && (
+                  <Badge
+                    variant="secondary"
+                    className="border-[#2a2a2a] bg-[#1a1a1a]"
+                  >
+                    {release.format}
+                  </Badge>
+                )}
+            {displayCountry && (
               <Badge
                 variant="secondary"
                 className="border-[#2a2a2a] bg-[#1a1a1a]"
               >
-                {release.format}
+                {displayCountry}
               </Badge>
             )}
-            {release.genres.map((genre) => (
+            {displayGenres.map((genre) => (
               <Badge key={genre} variant="outline" className="border-[#2a2a2a]">
                 {genre}
               </Badge>
             ))}
+            {displayStyles.map((style) => (
+              <Badge
+                key={style}
+                variant="outline"
+                className="border-[#2a2a2a] text-[#9ca3af]"
+              >
+                {style}
+              </Badge>
+            ))}
           </div>
 
-          {release.labels.length > 0 && (
+          {displayLabels ? (
             <p className="mt-4 text-sm text-[#525252]">
-              {release.labels.join(", ")}
-              {release.catalog_number && ` - ${release.catalog_number}`}
+              {displayLabels.map((lbl, i) => (
+                <span key={i}>
+                  {i > 0 && ", "}
+                  {lbl.name}
+                  {lbl.catno && lbl.catno !== "none" && ` [${lbl.catno}]`}
+                </span>
+              ))}
             </p>
+          ) : (
+            release.labels.length > 0 && (
+              <p className="mt-4 text-sm text-[#525252]">
+                {release.labels.join(", ")}
+                {release.catalog_number && ` - ${release.catalog_number}`}
+              </p>
+            )
           )}
         </div>
       </section>
@@ -223,6 +348,28 @@ export default function ReleaseDetailPage() {
           </>
         )}
       </section>
+
+      {/* Notes Dialog */}
+      {displayNotes && (
+        <Dialog open={notesDialogOpen} onOpenChange={setNotesDialogOpen}>
+          <DialogContent className="max-h-[80vh] overflow-y-auto sm:max-w-lg">
+            <DialogHeader>
+              <DialogTitle>Notes</DialogTitle>
+              <DialogDescription>{release.title}</DialogDescription>
+            </DialogHeader>
+            <div className="space-y-3">
+              {notesParagraphs.map((paragraph, i) => (
+                <p
+                  key={i}
+                  className="text-sm leading-relaxed text-[#9ca3af]"
+                >
+                  {paragraph.trim()}
+                </p>
+              ))}
+            </div>
+          </DialogContent>
+        </Dialog>
+      )}
 
       {/* Add to Playlist Dialog */}
       {selectedTrack && release && (

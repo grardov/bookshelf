@@ -62,6 +62,24 @@ export interface DiscogsTrack {
 }
 
 /**
+ * Label details from Discogs release.
+ */
+export interface DiscogsLabel {
+  name: string;
+  catno: string;
+  entity_type_name: string;
+}
+
+/**
+ * Format details from Discogs release.
+ */
+export interface DiscogsFormat {
+  name: string;
+  qty: string;
+  descriptions: string[];
+}
+
+/**
  * Response for release tracks from Discogs.
  */
 export interface ReleaseTracksResponse {
@@ -70,6 +88,12 @@ export interface ReleaseTracksResponse {
   title: string;
   artist_name: string;
   tracks: DiscogsTrack[];
+  notes: string | null;
+  country: string | null;
+  genres: string[];
+  styles: string[];
+  labels: DiscogsLabel[] | null;
+  formats: DiscogsFormat[] | null;
 }
 
 /**
