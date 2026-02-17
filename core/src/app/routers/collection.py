@@ -1,5 +1,7 @@
 """Collection API endpoints."""
 
+from typing import Any, cast
+
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 
 from app.config import Config
@@ -10,8 +12,11 @@ from app.supabase import get_supabase
 
 router = APIRouter()
 
+# Type alias for Supabase row data
+Row = dict[str, Any]
 
-def _require_discogs_connected(user_id: str) -> dict:
+
+def _require_discogs_connected(user_id: str) -> Row:
     """Get user's Discogs credentials or raise error if not connected.
 
     Args:
@@ -39,7 +44,7 @@ def _require_discogs_connected(user_id: str) -> dict:
             detail="User not found",
         )
 
-    user = response.data
+    user = cast(Row, response.data)
     has_token = user.get("discogs_access_token", None)
     has_secret = user.get("discogs_access_token_secret", None)
     if not has_token or not has_secret:
@@ -133,7 +138,11 @@ def list_releases(
     offset = (page - 1) * page_size
 
     # Build query
-    query = supabase.table("releases").select("*", count="exact").eq("user_id", user_id)
+    query = (
+        supabase.table("releases")
+        .select("*", count="exact")  # type: ignore[arg-type]
+        .eq("user_id", user_id)
+    )
 
     # Add search filter
     if search:
@@ -154,10 +163,10 @@ def list_releases(
         ) from e
 
     total = response.count or 0
-    items = response.data or []
+    items = cast(list[Row], response.data or [])
 
     return PaginatedReleases(
-        items=items,
+        items=items,  # type: ignore[arg-type]  # Pydantic coerces dicts to Release
         total=total,
         page=page,
         page_size=page_size,
@@ -203,7 +212,7 @@ def get_release(
             detail="Release not found",
         )
 
-    return response.data
+    return cast(Row, response.data)
 
 
 @router.get("/{release_id}/tracks", response_model=ReleaseTracksResponse)
@@ -253,7 +262,7 @@ def get_release_tracks(
             detail="Release not found",
         )
 
-    release = response.data
+    release = cast(Row, response.data)
 
     # Get user's Discogs credentials
     user = _require_discogs_connected(user_id)
@@ -269,19 +278,21 @@ def get_release_tracks(
         discogs_release = client.release(release["discogs_release_id"])
 
         tracks = []
-        for track in discogs_release.tracklist:
+        for track in discogs_release.tracklist:  # type: ignore[union-attr]
             # Get track-level artist name(s) if available
             if hasattr(track, "artists") and track.artists:
                 artists = [a.name for a in track.artists]
             else:
                 artists = [release["artist_name"]]
 
-            tracks.append({
-                "position": track.position,
-                "title": track.title,
-                "duration": track.duration if track.duration else None,
-                "artists": artists,
-            })
+            tracks.append(
+                {
+                    "position": track.position,
+                    "title": track.title,
+                    "duration": track.duration if track.duration else None,
+                    "artists": artists,
+                }
+            )
 
         return ReleaseTracksResponse(
             release_id=release["id"],

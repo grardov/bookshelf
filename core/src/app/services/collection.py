@@ -2,7 +2,7 @@
 
 import logging
 from datetime import UTC, datetime
-from typing import Any
+from typing import Any, cast
 
 import discogs_client
 
@@ -289,9 +289,8 @@ class CollectionService:
             .eq("user_id", user_id)
             .execute()
         )
-        existing_map = {
-            r["discogs_instance_id"]: r["id"] for r in (existing_response.data or [])
-        }
+        rows = cast(list[dict[str, Any]], existing_response.data or [])
+        existing_map = {r["discogs_instance_id"]: r["id"] for r in rows}
         existing_instance_ids = set(existing_map.keys())
 
         # Track new instance IDs from Discogs

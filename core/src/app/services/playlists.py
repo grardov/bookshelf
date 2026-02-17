@@ -1,16 +1,20 @@
 """Playlist service for CRUD operations."""
 
 import logging
+from typing import Any, cast
 
 from app.supabase import get_supabase
 
 logger = logging.getLogger(__name__)
 
+# Type alias for Supabase row data
+Row = dict[str, Any]
+
 
 class PlaylistService:
     """Service for playlist operations."""
 
-    def create_playlist(self, user_id: str, data: dict) -> dict:
+    def create_playlist(self, user_id: str, data: dict[str, Any]) -> Row:
         """Create a new playlist.
 
         Args:
@@ -30,11 +34,12 @@ class PlaylistService:
         }
 
         response = supabase.table("playlists").insert(playlist_data).execute()
-        playlist = response.data[0]
+        rows = cast(list[Row], response.data)
+        playlist = rows[0]
         playlist["track_count"] = 0
         return playlist
 
-    def get_playlist(self, playlist_id: str, user_id: str) -> dict | None:
+    def get_playlist(self, playlist_id: str, user_id: str) -> Row | None:
         """Get playlist by ID (with ownership check).
 
         Args:
@@ -55,11 +60,11 @@ class PlaylistService:
                 .single()
                 .execute()
             )
-            return response.data
+            return cast(Row | None, response.data)
         except Exception:
             return None
 
-    def get_playlist_with_tracks(self, playlist_id: str, user_id: str) -> dict | None:
+    def get_playlist_with_tracks(self, playlist_id: str, user_id: str) -> Row | None:
         """Get playlist with all tracks.
 
         Args:
@@ -84,7 +89,7 @@ class PlaylistService:
             .execute()
         )
 
-        tracks = tracks_response.data or []
+        tracks = cast(list[Row], tracks_response.data or [])
 
         # Calculate total duration
         total_seconds = 0
@@ -111,7 +116,7 @@ class PlaylistService:
         user_id: str,
         page: int = 1,
         page_size: int = 50,
-    ) -> tuple[list[dict], int]:
+    ) -> tuple[list[Row], int]:
         """List user's playlists with pagination.
 
         Args:
@@ -129,21 +134,21 @@ class PlaylistService:
         # Get playlists
         response = (
             supabase.table("playlists")
-            .select("*", count="exact")
+            .select("*", count="exact")  # type: ignore[arg-type]
             .eq("user_id", user_id)
             .order("created_at", desc=True)
             .range(offset, offset + page_size - 1)
             .execute()
         )
 
-        playlists = response.data or []
+        playlists = cast(list[Row], response.data or [])
         total = response.count or 0
 
         # Add track counts to each playlist
         for playlist in playlists:
             count_response = (
                 supabase.table("playlist_tracks")
-                .select("id", count="exact")
+                .select("id", count="exact")  # type: ignore[arg-type]
                 .eq("playlist_id", playlist["id"])
                 .execute()
             )
@@ -155,8 +160,8 @@ class PlaylistService:
         self,
         playlist_id: str,
         user_id: str,
-        data: dict,
-    ) -> dict | None:
+        data: dict[str, Any],
+    ) -> Row | None:
         """Update playlist.
 
         Args:
@@ -183,14 +188,15 @@ class PlaylistService:
             .execute()
         )
 
-        if not response.data:
+        rows = cast(list[Row], response.data)
+        if not rows:
             return None
 
-        playlist = response.data[0]
+        playlist = rows[0]
         # Add track count
         count_response = (
             supabase.table("playlist_tracks")
-            .select("id", count="exact")
+            .select("id", count="exact")  # type: ignore[arg-type]
             .eq("playlist_id", playlist_id)
             .execute()
         )
@@ -218,9 +224,12 @@ class PlaylistService:
             .execute()
         )
 
-        return len(response.data) > 0
+        rows = cast(list[Row], response.data or [])
+        return len(rows) > 0
 
-    def add_track(self, playlist_id: str, user_id: str, track_data: dict) -> dict:
+    def add_track(
+        self, playlist_id: str, user_id: str, track_data: dict[str, Any]
+    ) -> Row:
         """Add track to playlist.
 
         Args:
@@ -252,8 +261,9 @@ class PlaylistService:
         )
 
         next_order = 1
-        if order_response.data:
-            next_order = order_response.data[0]["track_order"] + 1
+        order_rows = cast(list[Row], order_response.data or [])
+        if order_rows:
+            next_order = order_rows[0]["track_order"] + 1
 
         insert_data = {
             "playlist_id": playlist_id,
@@ -268,7 +278,8 @@ class PlaylistService:
         }
 
         response = supabase.table("playlist_tracks").insert(insert_data).execute()
-        return response.data[0]
+        rows = cast(list[Row], response.data)
+        return rows[0]
 
     def remove_track(self, playlist_id: str, track_id: str, user_id: str) -> bool:
         """Remove track from playlist.
@@ -306,7 +317,7 @@ class PlaylistService:
         playlist_id: str,
         user_id: str,
         track_ids: list[str],
-    ) -> list[dict]:
+    ) -> list[Row]:
         """Reorder tracks in playlist.
 
         Args:
@@ -342,7 +353,7 @@ class PlaylistService:
             .execute()
         )
 
-        return response.data or []
+        return cast(list[Row], response.data or [])
 
 
 # Singleton instance

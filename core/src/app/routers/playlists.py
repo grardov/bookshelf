@@ -68,7 +68,7 @@ def list_playlists(
     has_more = (offset + len(playlists)) < total
 
     return PaginatedPlaylists(
-        items=playlists,
+        items=playlists,  # type: ignore[arg-type]  # Pydantic coerces dicts to Playlist
         total=total,
         page=page,
         page_size=page_size,
