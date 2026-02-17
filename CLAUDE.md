@@ -50,7 +50,41 @@ make test-watch       # Run web tests in watch mode
 make test-coverage    # Run tests with coverage reports
 make release          # Bump version, update CHANGELOG, commit, tag
 make release-first    # First release (no version bump)
+make config-ports     # Update Supabase ports in config.toml
+make ports            # Show current port configuration
 ```
+
+### Custom ports
+
+Default ports: core=8000, web=3000, Supabase API=54321, DB=54322, Studio=54323.
+
+Override at invocation:
+
+```sh
+make dev CORE_PORT=8001 WEB_PORT=3001
+```
+
+Or persist overrides in `.ports.mk` (git-ignored):
+
+```makefile
+# .ports.mk
+CORE_PORT         = 8001
+WEB_PORT          = 3001
+SB_API_PORT       = 55321
+SB_DB_PORT        = 55322
+SB_STUDIO_PORT    = 55323
+SB_INBUCKET_PORT  = 55324
+SB_ANALYTICS_PORT = 55327
+```
+
+To update Supabase ports in `db/supabase/config.toml`:
+
+```sh
+make config-ports SB_API_PORT=55321 SB_DB_PORT=55322 SB_STUDIO_PORT=55323
+# or just `make config-ports` if values are already in .ports.mk
+```
+
+After changing Supabase ports, update your `.env` files to match the new API port.
 
 ## API endpoints (core)
 

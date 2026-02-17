@@ -1,7 +1,9 @@
 .PHONY: dev lint format check test test-coverage
 
+PORT ?= 8000
+
 dev:
-	uv run uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
+	uv run uvicorn app.main:app --reload --host 0.0.0.0 --port $(PORT)
 
 lint:
 	uv run ruff check src/
