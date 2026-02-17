@@ -6,6 +6,9 @@ const API_BASE_URL =
 /**
  * Make an authenticated API request to the core backend.
  *
+ * Automatically retries once on 401 responses by refreshing the session,
+ * which handles stale/expired access tokens returned by getSession().
+ *
  * @param endpoint - API endpoint path (e.g., "/api/users/me")
  * @param options - Fetch request options
  * @returns Promise resolving to response data
@@ -13,7 +16,7 @@ const API_BASE_URL =
  */
 export async function apiRequest<T>(
   endpoint: string,
-  options: RequestInit = {}
+  options: RequestInit = {},
 ): Promise<T> {
   const supabase = createClient();
   const {
@@ -24,14 +27,30 @@ export async function apiRequest<T>(
     throw new Error("Not authenticated");
   }
 
-  const response = await fetch(`${API_BASE_URL}${endpoint}`, {
-    ...options,
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${session.access_token}`,
-      ...options.headers,
-    },
-  });
+  const makeRequest = (token: string) =>
+    fetch(`${API_BASE_URL}${endpoint}`, {
+      ...options,
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+        ...options.headers,
+      },
+    });
+
+  let response = await makeRequest(session.access_token);
+
+  // On 401, force a session refresh and retry once
+  if (response.status === 401) {
+    const {
+      data: { session: refreshedSession },
+    } = await supabase.auth.refreshSession();
+
+    if (!refreshedSession) {
+      throw new Error("Session expired. Please log in again.");
+    }
+
+    response = await makeRequest(refreshedSession.access_token);
+  }
 
   if (!response.ok) {
     const error = await response
