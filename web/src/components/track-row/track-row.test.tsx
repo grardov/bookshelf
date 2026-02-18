@@ -44,7 +44,7 @@ describe("TrackRow", () => {
 
   it("renders cover image when coverUrl is provided", () => {
     render(
-      <TrackRow {...defaultProps} coverUrl="https://example.com/cover.jpg" />
+      <TrackRow {...defaultProps} coverUrl="https://example.com/cover.jpg" />,
     );
 
     const image = screen.getByRole("img", { name: /cover for deep dive/i });
@@ -54,7 +54,7 @@ describe("TrackRow", () => {
   it("renders disc icon when no cover image", () => {
     const { container } = render(<TrackRow {...defaultProps} />);
 
-    const discIcon = container.querySelector('svg');
+    const discIcon = container.querySelector("svg");
     expect(discIcon).toBeInTheDocument();
   });
 
@@ -64,7 +64,7 @@ describe("TrackRow", () => {
         {...defaultProps}
         album="Test Album"
         coverUrl="https://example.com/cover.jpg"
-      />
+      />,
     );
 
     const image = screen.getByRole("img", { name: /cover for test album/i });
@@ -112,12 +112,13 @@ describe("TrackRow", () => {
     render(<TrackRow {...defaultProps} />);
 
     expect(
-      screen.queryByRole("button", { name: /more options/i })
+      screen.queryByRole("button", { name: /more options/i }),
     ).not.toBeInTheDocument();
   });
 
   it("handles long track titles with truncation", () => {
-    const longTitle = "This is a very long track title that should be truncated";
+    const longTitle =
+      "This is a very long track title that should be truncated";
     render(<TrackRow {...defaultProps} title={longTitle} />);
 
     const titleElement = screen.getByText(longTitle);
@@ -163,7 +164,7 @@ describe("TrackListHeader", () => {
   it("renders clock icon in header", () => {
     const { container } = render(<TrackListHeader />);
 
-    const svg = container.querySelector('svg');
+    const svg = container.querySelector("svg");
     expect(svg).toBeInTheDocument();
   });
 

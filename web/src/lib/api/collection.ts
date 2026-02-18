@@ -76,7 +76,7 @@ export async function syncCollection(): Promise<SyncSummary> {
  * @returns Promise resolving to paginated releases
  */
 export async function listReleases(
-  options: ListReleasesOptions = {}
+  options: ListReleasesOptions = {},
 ): Promise<PaginatedReleases> {
   const params = new URLSearchParams();
 

@@ -82,7 +82,8 @@ function SettingsContent() {
 
     try {
       const callbackUrl = `${window.location.origin}/discogs/callback`;
-      const { authorization_url, state } = await initiateDiscogsAuth(callbackUrl);
+      const { authorization_url, state } =
+        await initiateDiscogsAuth(callbackUrl);
 
       // Store state in sessionStorage for callback
       sessionStorage.setItem("discogs_oauth_state", state);
@@ -92,7 +93,9 @@ function SettingsContent() {
     } catch (err) {
       setIsConnectingDiscogs(false);
       setDiscogsError(
-        err instanceof Error ? err.message : "Failed to initiate Discogs connection"
+        err instanceof Error
+          ? err.message
+          : "Failed to initiate Discogs connection",
       );
     }
   };
@@ -110,7 +113,7 @@ function SettingsContent() {
       await refreshProfile();
     } catch (err) {
       setDiscogsError(
-        err instanceof Error ? err.message : "Failed to disconnect Discogs"
+        err instanceof Error ? err.message : "Failed to disconnect Discogs",
       );
     } finally {
       setIsDisconnectingDiscogs(false);
@@ -132,7 +135,10 @@ function SettingsContent() {
           <p className="mt-1 text-sm text-[#525252]">
             Update your display name and profile information
           </p>
-          <form onSubmit={handleUpdateProfile} className="mt-4 max-w-sm space-y-3">
+          <form
+            onSubmit={handleUpdateProfile}
+            className="mt-4 max-w-sm space-y-3"
+          >
             <div className="space-y-2">
               <Label htmlFor="display-name" className="text-[#9ca3af]">
                 Display name
@@ -146,11 +152,11 @@ function SettingsContent() {
                 className="border-[#2a2a2a] bg-[#1a1a1a] text-white focus-visible:ring-primary"
               />
             </div>
-            {error && (
-              <p className="text-sm text-red-500">{error}</p>
-            )}
+            {error && <p className="text-sm text-red-500">{error}</p>}
             {success && (
-              <p className="text-sm text-green-500">Profile updated successfully!</p>
+              <p className="text-sm text-green-500">
+                Profile updated successfully!
+              </p>
             )}
           </form>
         </div>

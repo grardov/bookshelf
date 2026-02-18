@@ -136,7 +136,7 @@ export interface AddTrackData {
  */
 export async function listPlaylists(
   page = 1,
-  pageSize = 50
+  pageSize = 50,
 ): Promise<PaginatedPlaylists> {
   const params = new URLSearchParams();
   params.set("page", page.toString());
@@ -151,7 +151,7 @@ export async function listPlaylists(
  * @returns Playlist with tracks
  */
 export async function getPlaylist(
-  playlistId: string
+  playlistId: string,
 ): Promise<PlaylistWithTracks> {
   return apiRequest<PlaylistWithTracks>(`/api/playlists/${playlistId}`);
 }
@@ -163,7 +163,7 @@ export async function getPlaylist(
  * @returns Created playlist
  */
 export async function createPlaylist(
-  data: CreatePlaylistData
+  data: CreatePlaylistData,
 ): Promise<Playlist> {
   return apiRequest<Playlist>("/api/playlists", {
     method: "POST",
@@ -180,7 +180,7 @@ export async function createPlaylist(
  */
 export async function updatePlaylist(
   playlistId: string,
-  data: UpdatePlaylistData
+  data: UpdatePlaylistData,
 ): Promise<Playlist> {
   return apiRequest<Playlist>(`/api/playlists/${playlistId}`, {
     method: "PATCH",
@@ -208,7 +208,7 @@ export async function deletePlaylist(playlistId: string): Promise<void> {
  */
 export async function addTrackToPlaylist(
   playlistId: string,
-  data: AddTrackData
+  data: AddTrackData,
 ): Promise<PlaylistTrack> {
   return apiRequest<PlaylistTrack>(`/api/playlists/${playlistId}/tracks`, {
     method: "POST",
@@ -224,7 +224,7 @@ export async function addTrackToPlaylist(
  */
 export async function removeTrackFromPlaylist(
   playlistId: string,
-  trackId: string
+  trackId: string,
 ): Promise<void> {
   await apiRequest(`/api/playlists/${playlistId}/tracks/${trackId}`, {
     method: "DELETE",
@@ -240,14 +240,14 @@ export async function removeTrackFromPlaylist(
  */
 export async function reorderPlaylistTracks(
   playlistId: string,
-  trackIds: string[]
+  trackIds: string[],
 ): Promise<PlaylistTrack[]> {
   return apiRequest<PlaylistTrack[]>(
     `/api/playlists/${playlistId}/tracks/reorder`,
     {
       method: "PATCH",
       body: JSON.stringify({ track_ids: trackIds }),
-    }
+    },
   );
 }
 
@@ -258,9 +258,9 @@ export async function reorderPlaylistTracks(
  * @returns Release tracks from Discogs
  */
 export async function getReleaseTracks(
-  releaseId: string
+  releaseId: string,
 ): Promise<ReleaseTracksResponse> {
   return apiRequest<ReleaseTracksResponse>(
-    `/api/collection/${releaseId}/tracks`
+    `/api/collection/${releaseId}/tracks`,
   );
 }

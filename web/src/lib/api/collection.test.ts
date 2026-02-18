@@ -100,7 +100,7 @@ describe("Collection API", () => {
       await listReleases({ pageSize: 25 });
 
       expect(mockApiRequest).toHaveBeenCalledWith(
-        "/api/collection?page_size=25"
+        "/api/collection?page_size=25",
       );
     });
 
@@ -110,7 +110,7 @@ describe("Collection API", () => {
       await listReleases({ sortBy: "title" });
 
       expect(mockApiRequest).toHaveBeenCalledWith(
-        "/api/collection?sort_by=title"
+        "/api/collection?sort_by=title",
       );
     });
 
@@ -120,7 +120,7 @@ describe("Collection API", () => {
       await listReleases({ sortOrder: "desc" });
 
       expect(mockApiRequest).toHaveBeenCalledWith(
-        "/api/collection?sort_order=desc"
+        "/api/collection?sort_order=desc",
       );
     });
 
@@ -130,7 +130,7 @@ describe("Collection API", () => {
       await listReleases({ search: "daft punk" });
 
       expect(mockApiRequest).toHaveBeenCalledWith(
-        "/api/collection?search=daft+punk"
+        "/api/collection?search=daft+punk",
       );
     });
 
@@ -188,7 +188,7 @@ describe("Collection API", () => {
       const result = await getRelease("release-123");
 
       expect(mockApiRequest).toHaveBeenCalledWith(
-        "/api/collection/release-123"
+        "/api/collection/release-123",
       );
       expect(result).toEqual(mockRelease);
     });
@@ -199,7 +199,7 @@ describe("Collection API", () => {
       await getRelease("550e8400-e29b-41d4-a716-446655440000");
 
       expect(mockApiRequest).toHaveBeenCalledWith(
-        "/api/collection/550e8400-e29b-41d4-a716-446655440000"
+        "/api/collection/550e8400-e29b-41d4-a716-446655440000",
       );
     });
 
@@ -207,7 +207,7 @@ describe("Collection API", () => {
       mockApiRequest.mockRejectedValueOnce(new Error("Release not found"));
 
       await expect(getRelease("nonexistent")).rejects.toThrow(
-        "Release not found"
+        "Release not found",
       );
     });
   });

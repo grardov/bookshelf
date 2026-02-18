@@ -64,7 +64,7 @@ function createRelease(overrides: Partial<Release> = {}): Release {
 
 function createPaginatedResponse(
   items: Release[],
-  overrides: Partial<PaginatedReleases> = {}
+  overrides: Partial<PaginatedReleases> = {},
 ): PaginatedReleases {
   return {
     items,
@@ -115,7 +115,7 @@ describe("CollectionPage", () => {
   it("shows singular 'release' when there is exactly one", async () => {
     const releases = [createRelease({ id: "r-1" })];
     mockListReleases.mockResolvedValue(
-      createPaginatedResponse(releases, { total: 1 })
+      createPaginatedResponse(releases, { total: 1 }),
     );
 
     render(<CollectionPage />);
@@ -136,11 +136,11 @@ describe("CollectionPage", () => {
 
     expect(
       screen.getByText(
-        "Add releases to your collection manually or sync from Discogs in Settings."
-      )
+        "Add releases to your collection manually or sync from Discogs in Settings.",
+      ),
     ).toBeInTheDocument();
     expect(
-      screen.getByRole("link", { name: /go to settings/i })
+      screen.getByRole("link", { name: /go to settings/i }),
     ).toHaveAttribute("href", "/settings");
   });
 
@@ -167,24 +167,22 @@ describe("CollectionPage", () => {
     // Wait for debounced call (300ms)
     await waitFor(() => {
       expect(mockListReleases).toHaveBeenCalledWith(
-        expect.objectContaining({ search: "techno", page: 1 })
+        expect.objectContaining({ search: "techno", page: 1 }),
       );
     });
   });
 
   it("shows 'Load More' button when there are more results", async () => {
-    const releases = [
-      createRelease({ id: "r-1", title: "Album One" }),
-    ];
+    const releases = [createRelease({ id: "r-1", title: "Album One" })];
     mockListReleases.mockResolvedValue(
-      createPaginatedResponse(releases, { has_more: true, total: 100 })
+      createPaginatedResponse(releases, { has_more: true, total: 100 }),
     );
 
     render(<CollectionPage />);
 
     await waitFor(() => {
       expect(
-        screen.getByRole("button", { name: /load more/i })
+        screen.getByRole("button", { name: /load more/i }),
       ).toBeInTheDocument();
     });
   });
@@ -192,7 +190,7 @@ describe("CollectionPage", () => {
   it("does not show 'Load More' button when there are no more results", async () => {
     const releases = [createRelease({ id: "r-1" })];
     mockListReleases.mockResolvedValue(
-      createPaginatedResponse(releases, { has_more: false })
+      createPaginatedResponse(releases, { has_more: false }),
     );
 
     render(<CollectionPage />);
@@ -202,17 +200,15 @@ describe("CollectionPage", () => {
     });
 
     expect(
-      screen.queryByRole("button", { name: /load more/i })
+      screen.queryByRole("button", { name: /load more/i }),
     ).not.toBeInTheDocument();
   });
 
   it("loads next page when 'Load More' is clicked", async () => {
     const user = userEvent.setup();
-    const firstPage = [
-      createRelease({ id: "r-1", title: "Album One" }),
-    ];
+    const firstPage = [createRelease({ id: "r-1", title: "Album One" })];
     mockListReleases.mockResolvedValue(
-      createPaginatedResponse(firstPage, { has_more: true, total: 2 })
+      createPaginatedResponse(firstPage, { has_more: true, total: 2 }),
     );
 
     render(<CollectionPage />);
@@ -221,11 +217,13 @@ describe("CollectionPage", () => {
       expect(screen.getByText("Album One")).toBeInTheDocument();
     });
 
-    const secondPage = [
-      createRelease({ id: "r-2", title: "Album Two" }),
-    ];
+    const secondPage = [createRelease({ id: "r-2", title: "Album Two" })];
     mockListReleases.mockResolvedValue(
-      createPaginatedResponse(secondPage, { page: 2, has_more: false, total: 2 })
+      createPaginatedResponse(secondPage, {
+        page: 2,
+        has_more: false,
+        total: 2,
+      }),
     );
 
     const loadMoreButton = screen.getByRole("button", { name: /load more/i });
@@ -233,7 +231,7 @@ describe("CollectionPage", () => {
 
     await waitFor(() => {
       expect(mockListReleases).toHaveBeenCalledWith(
-        expect.objectContaining({ page: 2 })
+        expect.objectContaining({ page: 2 }),
       );
     });
   });
@@ -246,7 +244,7 @@ describe("CollectionPage", () => {
 
     await waitFor(() => {
       expect(
-        screen.getByRole("region", { name: /release collection/i })
+        screen.getByRole("region", { name: /release collection/i }),
       ).toBeInTheDocument();
     });
   });

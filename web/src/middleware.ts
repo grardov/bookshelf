@@ -22,7 +22,7 @@ export async function middleware(request: NextRequest) {
 
   // Check if accessing protected route without auth
   const isProtectedRoute = protectedRoutes.some(
-    (route) => pathname === route || pathname.startsWith(`${route}/`)
+    (route) => pathname === route || pathname.startsWith(`${route}/`),
   );
 
   if (isProtectedRoute && !user) {

@@ -76,7 +76,10 @@ export function AppSidebar() {
     <aside className="fixed inset-y-0 left-0 z-40 hidden w-56 flex-col border-r border-[#2a2a2a] bg-[#0a0a0a] md:flex">
       {/* Logo */}
       <div className="px-6 pt-6 pb-8">
-        <Link href="/create" className="font-heading text-xl font-bold italic text-white">
+        <Link
+          href="/create"
+          className="font-heading text-xl font-bold italic text-white"
+        >
           Bookshelf.
         </Link>
       </div>

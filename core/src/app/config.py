@@ -27,7 +27,9 @@ class Config:
     # CORS allowed origins (comma-separated)
     ALLOWED_ORIGINS: list[str] = [
         origin.strip()
-        for origin in os.getenv("ALLOWED_ORIGINS", "http://localhost:3000,http://localhost:3001").split(",")
+        for origin in os.getenv(
+            "ALLOWED_ORIGINS", "http://localhost:3000,http://localhost:3001"
+        ).split(",")
         if origin.strip()
     ]
 

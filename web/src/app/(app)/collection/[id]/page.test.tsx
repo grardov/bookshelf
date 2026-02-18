@@ -130,9 +130,7 @@ const mockTracksResponse = {
   country: "US",
   genres: ["Jazz"],
   styles: ["Hard Bop", "Post Bop"],
-  labels: [
-    { name: "Blue Note", catno: "BLP 1577", entity_type_name: "Label" },
-  ],
+  labels: [{ name: "Blue Note", catno: "BLP 1577", entity_type_name: "Label" }],
   formats: [{ name: "Vinyl", qty: "1", descriptions: ["LP", "Album"] }],
 };
 
@@ -212,7 +210,7 @@ describe("ReleaseDetailPage", () => {
       const collectionLink = screen.getByText("Collection");
       expect(collectionLink.closest("a")).toHaveAttribute(
         "href",
-        "/collection"
+        "/collection",
       );
     });
   });
@@ -275,7 +273,7 @@ describe("ReleaseDetailPage", () => {
 
     await waitFor(() => {
       expect(
-        screen.getByText("Loading tracks from Discogs...")
+        screen.getByText("Loading tracks from Discogs..."),
       ).toBeInTheDocument();
     });
   });
@@ -287,7 +285,7 @@ describe("ReleaseDetailPage", () => {
 
     await waitFor(() => {
       expect(
-        screen.getByText("Unable to load tracks. Please try again.")
+        screen.getByText("Unable to load tracks. Please try again."),
       ).toBeInTheDocument();
     });
   });
@@ -299,7 +297,7 @@ describe("ReleaseDetailPage", () => {
 
     await waitFor(() => {
       expect(
-        screen.getByRole("button", { name: /retry/i })
+        screen.getByRole("button", { name: /retry/i }),
       ).toBeInTheDocument();
     });
   });
@@ -328,9 +326,7 @@ describe("ReleaseDetailPage", () => {
 
     await waitFor(() => {
       // Format renders as "{name} ({descriptions})" e.g. "Vinyl (LP, Album)"
-      expect(
-        screen.getByText("Vinyl (LP, Album)")
-      ).toBeInTheDocument();
+      expect(screen.getByText("Vinyl (LP, Album)")).toBeInTheDocument();
     });
   });
 
@@ -339,7 +335,7 @@ describe("ReleaseDetailPage", () => {
 
     await waitFor(() => {
       expect(
-        screen.getByText("Recorded in 1957 at Van Gelder Studio.")
+        screen.getByText("Recorded in 1957 at Van Gelder Studio."),
       ).toBeInTheDocument();
     });
   });
@@ -359,7 +355,7 @@ describe("ReleaseDetailPage", () => {
 
       // No img element should be rendered for the cover
       expect(
-        screen.queryByAltText("Blue Train by John Coltrane")
+        screen.queryByAltText("Blue Train by John Coltrane"),
       ).not.toBeInTheDocument();
     });
   });
@@ -392,7 +388,7 @@ describe("ReleaseDetailPage", () => {
 
       await waitFor(() => {
         expect(
-          screen.getByText("No track information available")
+          screen.getByText("No track information available"),
         ).toBeInTheDocument();
       });
     });

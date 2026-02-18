@@ -127,7 +127,7 @@ describe("SettingsPage", () => {
     render(<SettingsPage />);
 
     expect(
-      screen.getByRole("button", { name: /connect discogs/i })
+      screen.getByRole("button", { name: /connect discogs/i }),
     ).toBeInTheDocument();
   });
 
@@ -136,7 +136,7 @@ describe("SettingsPage", () => {
 
     expect(screen.queryByTestId("sync-button")).not.toBeInTheDocument();
     expect(
-      screen.queryByRole("button", { name: /disconnect/i })
+      screen.queryByRole("button", { name: /disconnect/i }),
     ).not.toBeInTheDocument();
   });
 
@@ -160,7 +160,7 @@ describe("SettingsPage", () => {
       render(<SettingsPage />);
 
       expect(
-        screen.getByText("Connected as vinyl_collector")
+        screen.getByText("Connected as vinyl_collector"),
       ).toBeInTheDocument();
       expect(screen.getByText("Connected")).toBeInTheDocument();
     });
@@ -175,7 +175,7 @@ describe("SettingsPage", () => {
       render(<SettingsPage />);
 
       expect(
-        screen.getByRole("button", { name: /disconnect$/i })
+        screen.getByRole("button", { name: /disconnect$/i }),
       ).toBeInTheDocument();
     });
 
@@ -183,7 +183,7 @@ describe("SettingsPage", () => {
       render(<SettingsPage />);
 
       expect(
-        screen.queryByRole("button", { name: /connect discogs/i })
+        screen.queryByRole("button", { name: /connect discogs/i }),
       ).not.toBeInTheDocument();
     });
   });
@@ -230,16 +230,14 @@ describe("SettingsPage", () => {
 
       await waitFor(() => {
         expect(
-          screen.getByText("Profile updated successfully!")
+          screen.getByText("Profile updated successfully!"),
         ).toBeInTheDocument();
       });
     });
 
     it("shows error message when profile update fails", async () => {
       const user = userEvent.setup();
-      mockUpdateDisplayName.mockRejectedValueOnce(
-        new Error("Update failed")
-      );
+      mockUpdateDisplayName.mockRejectedValueOnce(new Error("Update failed"));
 
       render(<SettingsPage />);
 
@@ -290,9 +288,7 @@ describe("SettingsPage", () => {
 
     it("shows error when Discogs connect fails", async () => {
       const user = userEvent.setup();
-      mockInitiateDiscogsAuth.mockRejectedValueOnce(
-        new Error("OAuth failed")
-      );
+      mockInitiateDiscogsAuth.mockRejectedValueOnce(new Error("OAuth failed"));
 
       render(<SettingsPage />);
 
@@ -364,19 +360,19 @@ describe("SettingsPage", () => {
   describe("Discogs callback success", () => {
     it("shows success message when discogs=connected param is present", () => {
       mockSearchParamsGet.mockImplementation((key: string) =>
-        key === "discogs" ? "connected" : null
+        key === "discogs" ? "connected" : null,
       );
 
       render(<SettingsPage />);
 
       expect(
-        screen.getByText("Discogs account connected successfully!")
+        screen.getByText("Discogs account connected successfully!"),
       ).toBeInTheDocument();
     });
 
     it("clears the discogs query param on success", () => {
       mockSearchParamsGet.mockImplementation((key: string) =>
-        key === "discogs" ? "connected" : null
+        key === "discogs" ? "connected" : null,
       );
 
       render(<SettingsPage />);
@@ -399,7 +395,7 @@ describe("SettingsPage", () => {
     render(<SettingsPage />);
 
     expect(
-      screen.getByRole("button", { name: /delete account/i })
+      screen.getByRole("button", { name: /delete account/i }),
     ).toBeInTheDocument();
   });
 
@@ -407,7 +403,7 @@ describe("SettingsPage", () => {
     render(<SettingsPage />);
 
     expect(
-      screen.getByRole("button", { name: /update password/i })
+      screen.getByRole("button", { name: /update password/i }),
     ).toBeInTheDocument();
   });
 });

@@ -35,7 +35,9 @@ export default function PlaylistsPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [createOpen, setCreateOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
-  const [playlistToDelete, setPlaylistToDelete] = useState<Playlist | null>(null);
+  const [playlistToDelete, setPlaylistToDelete] = useState<Playlist | null>(
+    null,
+  );
   const [isDeleting, setIsDeleting] = useState(false);
 
   const fetchPlaylists = useCallback(async () => {

@@ -68,7 +68,7 @@ vi.mock("framer-motion", () => ({
 
 // Filter out framer-motion specific props to avoid React warnings
 function filterMotionProps(
-  props: Record<string, unknown>
+  props: Record<string, unknown>,
 ): Record<string, unknown> {
   const {
     initial,
@@ -128,7 +128,7 @@ describe("CreatePage", () => {
       expect(
         screen.getByText((_content, element) => {
           return element?.textContent === "What do you wantto listen to?";
-        })
+        }),
       ).toBeInTheDocument();
     });
   });
@@ -159,16 +159,14 @@ describe("CreatePage", () => {
     expect(input).toBeInTheDocument();
     expect(input).toHaveAttribute(
       "placeholder",
-      "e.g., Late night drive through the city..."
+      "e.g., Late night drive through the city...",
     );
   });
 
   it("renders the 'Create' button", () => {
     render(<CreatePage />);
 
-    expect(
-      screen.getByRole("button", { name: /create/i })
-    ).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /create/i })).toBeInTheDocument();
   });
 
   it("switches to manual mode when Manual button is clicked", async () => {
@@ -182,7 +180,7 @@ describe("CreatePage", () => {
       expect(
         screen.getByText((_content, element) => {
           return element?.textContent === "Create yourplaylist";
-        })
+        }),
       ).toBeInTheDocument();
     });
   });
@@ -225,7 +223,7 @@ describe("CreatePage", () => {
       expect(
         screen.getByText((_content, element) => {
           return element?.textContent === "What do you wantto listen to?";
-        })
+        }),
       ).toBeInTheDocument();
     });
   });
@@ -317,7 +315,7 @@ describe("CreatePage", () => {
 
       await waitFor(() => {
         expect(
-          screen.getByRole("button", { name: /create playlist/i })
+          screen.getByRole("button", { name: /create playlist/i }),
         ).toBeInTheDocument();
       });
     });

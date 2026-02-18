@@ -7,7 +7,7 @@ describe("LandingPage", () => {
     render(<LandingPage />);
 
     expect(
-      screen.getByRole("heading", { level: 1, name: "Bookshelf." })
+      screen.getByRole("heading", { level: 1, name: "Bookshelf." }),
     ).toBeInTheDocument();
   });
 
@@ -15,7 +15,7 @@ describe("LandingPage", () => {
     render(<LandingPage />);
 
     expect(
-      screen.getByText("Your Discogs collection, remixed into playlists")
+      screen.getByText("Your Discogs collection, remixed into playlists"),
     ).toBeInTheDocument();
   });
 

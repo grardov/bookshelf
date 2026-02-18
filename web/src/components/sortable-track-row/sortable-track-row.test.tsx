@@ -8,7 +8,7 @@ function renderWithDndContext(ui: React.ReactElement) {
   return render(
     <DndContext>
       <SortableContext items={["track-1"]}>{ui}</SortableContext>
-    </DndContext>
+    </DndContext>,
   );
 }
 
@@ -42,7 +42,7 @@ describe("SortableTrackRow", () => {
 
   it("renders track position (vinyl position) when provided", () => {
     renderWithDndContext(
-      <SortableTrackRow {...defaultProps} position={1} trackPosition="A1" />
+      <SortableTrackRow {...defaultProps} position={1} trackPosition="A1" />,
     );
 
     expect(screen.getByText("A1")).toBeInTheDocument();
@@ -54,7 +54,7 @@ describe("SortableTrackRow", () => {
       <SortableTrackRow
         {...defaultProps}
         coverUrl="https://example.com/cover.jpg"
-      />
+      />,
     );
 
     const img = screen.getByRole("img");
@@ -69,12 +69,12 @@ describe("SortableTrackRow", () => {
     ];
 
     renderWithDndContext(
-      <SortableTrackRow {...defaultProps} menuItems={menuItems} />
+      <SortableTrackRow {...defaultProps} menuItems={menuItems} />,
     );
 
     // Menu trigger should be present
     expect(
-      screen.getByLabelText(`More options for ${defaultProps.title}`)
+      screen.getByLabelText(`More options for ${defaultProps.title}`),
     ).toBeInTheDocument();
   });
 });

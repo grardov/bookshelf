@@ -22,7 +22,9 @@ describe("middleware", () => {
 
       expect(response.status).toBe(307);
       expect(response.headers.get("location")).toContain("/login");
-      expect(response.headers.get("location")).toContain("redirectTo=%2Fcreate");
+      expect(response.headers.get("location")).toContain(
+        "redirectTo=%2Fcreate",
+      );
     });
 
     it("redirects to login when accessing /collection without auth", async () => {
@@ -32,14 +34,14 @@ describe("middleware", () => {
       });
 
       const request = new NextRequest(
-        new URL("http://localhost:3000/collection")
+        new URL("http://localhost:3000/collection"),
       );
       const response = await middleware(request);
 
       expect(response.status).toBe(307);
       expect(response.headers.get("location")).toContain("/login");
       expect(response.headers.get("location")).toContain(
-        "redirectTo=%2Fcollection"
+        "redirectTo=%2Fcollection",
       );
     });
 
@@ -50,14 +52,14 @@ describe("middleware", () => {
       });
 
       const request = new NextRequest(
-        new URL("http://localhost:3000/playlists/123")
+        new URL("http://localhost:3000/playlists/123"),
       );
       const response = await middleware(request);
 
       expect(response.status).toBe(307);
       expect(response.headers.get("location")).toContain("/login");
       expect(response.headers.get("location")).toContain(
-        "redirectTo=%2Fplaylists%2F123"
+        "redirectTo=%2Fplaylists%2F123",
       );
     });
 

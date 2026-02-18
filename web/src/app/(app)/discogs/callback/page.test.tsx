@@ -54,7 +54,7 @@ describe("DiscogsCallbackPage", () => {
     render(<DiscogsCallbackPage />);
 
     expect(
-      screen.getByText("Connecting your Discogs account...")
+      screen.getByText("Connecting your Discogs account..."),
     ).toBeInTheDocument();
   });
 
@@ -68,9 +68,7 @@ describe("DiscogsCallbackPage", () => {
     });
 
     expect(
-      screen.getByText(
-        "Authorization was denied or failed. Please try again."
-      )
+      screen.getByText("Authorization was denied or failed. Please try again."),
     ).toBeInTheDocument();
   });
 
@@ -85,7 +83,7 @@ describe("DiscogsCallbackPage", () => {
     });
 
     expect(
-      screen.getByText("OAuth session expired. Please try again.")
+      screen.getByText("OAuth session expired. Please try again."),
     ).toBeInTheDocument();
   });
 
@@ -108,7 +106,7 @@ describe("DiscogsCallbackPage", () => {
     await waitFor(() => {
       expect(mockCompleteDiscogsAuth).toHaveBeenCalledWith(
         "test-verifier",
-        "encrypted-state"
+        "encrypted-state",
       );
     });
 
@@ -126,7 +124,7 @@ describe("DiscogsCallbackPage", () => {
     sessionStorage.setItem("discogs_oauth_state", "encrypted-state");
 
     mockCompleteDiscogsAuth.mockRejectedValue(
-      new Error("Invalid OAuth verifier")
+      new Error("Invalid OAuth verifier"),
     );
 
     render(<DiscogsCallbackPage />);
@@ -151,7 +149,7 @@ describe("DiscogsCallbackPage", () => {
     });
 
     expect(
-      screen.getByText("Failed to connect Discogs account")
+      screen.getByText("Failed to connect Discogs account"),
     ).toBeInTheDocument();
   });
 
@@ -192,7 +190,7 @@ describe("DiscogsCallbackPage", () => {
     await waitFor(() => {
       expect(mockCompleteDiscogsAuth).toHaveBeenCalledWith(
         "my-verifier",
-        "my-state"
+        "my-state",
       );
     });
   });

@@ -5,7 +5,12 @@ import { usePathname } from "next/navigation";
 import { Home, Library, ListMusic, Settings, Menu, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
-import { Sheet, SheetContent, SheetTrigger, SheetTitle } from "@/components/ui/sheet";
+import {
+  Sheet,
+  SheetContent,
+  SheetTrigger,
+  SheetTitle,
+} from "@/components/ui/sheet";
 import { useState } from "react";
 
 const navItems = [
@@ -21,7 +26,10 @@ export function MobileNav() {
 
   return (
     <div className="sticky top-0 z-50 flex items-center justify-between border-b border-[#2a2a2a] bg-[#0a0a0a] px-4 py-3 md:hidden">
-      <Link href="/create" className="font-heading text-lg font-bold italic text-white">
+      <Link
+        href="/create"
+        className="font-heading text-lg font-bold italic text-white"
+      >
         Bookshelf.
       </Link>
       <Sheet open={open} onOpenChange={setOpen}>
@@ -69,7 +77,10 @@ export function MobileNav() {
                         />
                       )}
                       <item.icon
-                        className={cn("h-4 w-4 shrink-0", !isActive && "ml-[18px]")}
+                        className={cn(
+                          "h-4 w-4 shrink-0",
+                          !isActive && "ml-[18px]",
+                        )}
                         aria-hidden="true"
                       />
                       <span>{item.title}</span>

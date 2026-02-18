@@ -82,9 +82,7 @@ function createPlaylist(overrides: Partial<Playlist> = {}): Playlist {
   };
 }
 
-function createPaginatedResponse(
-  items: Playlist[]
-): PaginatedPlaylists {
+function createPaginatedResponse(items: Playlist[]): PaginatedPlaylists {
   return {
     items,
     total: items.length,
@@ -146,8 +144,8 @@ describe("PlaylistsPage", () => {
 
     expect(
       screen.getByText(
-        "Create your first playlist to start organizing your tracks."
-      )
+        "Create your first playlist to start organizing your tracks.",
+      ),
     ).toBeInTheDocument();
   });
 
@@ -189,9 +187,7 @@ describe("PlaylistsPage", () => {
   });
 
   it("renders playlist links pointing to detail pages", async () => {
-    const playlists = [
-      createPlaylist({ id: "p-abc", name: "My Playlist" }),
-    ];
+    const playlists = [createPlaylist({ id: "p-abc", name: "My Playlist" })];
     mockListPlaylists.mockResolvedValue(createPaginatedResponse(playlists));
 
     render(<PlaylistsPage />);
@@ -252,16 +248,14 @@ describe("PlaylistsPage", () => {
     // Confirm dialog appears with the playlist name
     await waitFor(() => {
       expect(
-        screen.getByText(/are you sure you want to delete/i)
+        screen.getByText(/are you sure you want to delete/i),
       ).toBeInTheDocument();
     });
   });
 
   it("deletes playlist when confirmed in the dialog", async () => {
     const user = userEvent.setup();
-    const playlists = [
-      createPlaylist({ id: "p-1", name: "Doomed Playlist" }),
-    ];
+    const playlists = [createPlaylist({ id: "p-1", name: "Doomed Playlist" })];
     mockListPlaylists.mockResolvedValue(createPaginatedResponse(playlists));
     mockDeletePlaylist.mockResolvedValue(undefined);
 
@@ -281,7 +275,7 @@ describe("PlaylistsPage", () => {
 
     // Confirm deletion in the dialog
     const confirmDialog = await screen.findByText(
-      /are you sure you want to delete/i
+      /are you sure you want to delete/i,
     );
     expect(confirmDialog).toBeInTheDocument();
 
@@ -305,9 +299,7 @@ describe("PlaylistsPage", () => {
 
   it("navigates to playlist detail when play button is clicked", async () => {
     const user = userEvent.setup();
-    const playlists = [
-      createPlaylist({ id: "p-1", name: "Play Me" }),
-    ];
+    const playlists = [createPlaylist({ id: "p-1", name: "Play Me" })];
     mockListPlaylists.mockResolvedValue(createPaginatedResponse(playlists));
 
     render(<PlaylistsPage />);

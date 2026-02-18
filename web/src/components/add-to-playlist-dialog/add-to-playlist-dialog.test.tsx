@@ -75,7 +75,7 @@ describe("AddToPlaylistDialog", () => {
 
     expect(screen.getByText("Add to playlist")).toBeInTheDocument();
     expect(
-      screen.getByText(/Add "Test Track" to a playlist/)
+      screen.getByText(/Add "Test Track" to a playlist/),
     ).toBeInTheDocument();
   });
 

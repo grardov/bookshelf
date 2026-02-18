@@ -77,7 +77,7 @@ describe("Playlists API", () => {
       const result = await listPlaylists();
 
       expect(mockApiRequest).toHaveBeenCalledWith(
-        "/api/playlists?page=1&page_size=50"
+        "/api/playlists?page=1&page_size=50",
       );
       expect(result).toEqual(mockPaginatedResponse);
     });
@@ -88,7 +88,7 @@ describe("Playlists API", () => {
       await listPlaylists(2, 25);
 
       expect(mockApiRequest).toHaveBeenCalledWith(
-        "/api/playlists?page=2&page_size=25"
+        "/api/playlists?page=2&page_size=25",
       );
     });
 
@@ -105,7 +105,9 @@ describe("Playlists API", () => {
 
       const result = await getPlaylist("playlist-123");
 
-      expect(mockApiRequest).toHaveBeenCalledWith("/api/playlists/playlist-123");
+      expect(mockApiRequest).toHaveBeenCalledWith(
+        "/api/playlists/playlist-123",
+      );
       expect(result).toEqual(mockPlaylistWithTracks);
     });
 
@@ -150,7 +152,7 @@ describe("Playlists API", () => {
       mockApiRequest.mockRejectedValueOnce(new Error("Validation failed"));
 
       await expect(createPlaylist({ name: "" })).rejects.toThrow(
-        "Validation failed"
+        "Validation failed",
       );
     });
   });
@@ -162,19 +164,22 @@ describe("Playlists API", () => {
       const data = { name: "Updated Name" };
       const result = await updatePlaylist("playlist-123", data);
 
-      expect(mockApiRequest).toHaveBeenCalledWith("/api/playlists/playlist-123", {
-        method: "PATCH",
-        body: JSON.stringify(data),
-      });
+      expect(mockApiRequest).toHaveBeenCalledWith(
+        "/api/playlists/playlist-123",
+        {
+          method: "PATCH",
+          body: JSON.stringify(data),
+        },
+      );
       expect(result).toEqual(mockPlaylist);
     });
 
     it("propagates errors from apiRequest", async () => {
       mockApiRequest.mockRejectedValueOnce(new Error("Not found"));
 
-      await expect(updatePlaylist("nonexistent", { name: "Test" })).rejects.toThrow(
-        "Not found"
-      );
+      await expect(
+        updatePlaylist("nonexistent", { name: "Test" }),
+      ).rejects.toThrow("Not found");
     });
   });
 
@@ -184,9 +189,12 @@ describe("Playlists API", () => {
 
       await deletePlaylist("playlist-123");
 
-      expect(mockApiRequest).toHaveBeenCalledWith("/api/playlists/playlist-123", {
-        method: "DELETE",
-      });
+      expect(mockApiRequest).toHaveBeenCalledWith(
+        "/api/playlists/playlist-123",
+        {
+          method: "DELETE",
+        },
+      );
     });
 
     it("propagates errors from apiRequest", async () => {
@@ -215,7 +223,7 @@ describe("Playlists API", () => {
         {
           method: "POST",
           body: JSON.stringify(data),
-        }
+        },
       );
       expect(result).toEqual(mockTrack);
     });
@@ -239,7 +247,7 @@ describe("Playlists API", () => {
         {
           method: "POST",
           body: JSON.stringify(data),
-        }
+        },
       );
     });
 
@@ -253,7 +261,7 @@ describe("Playlists API", () => {
           position: "A1",
           title: "Track",
           artist: "Artist",
-        })
+        }),
       ).rejects.toThrow("Playlist not found");
     });
   });
@@ -268,7 +276,7 @@ describe("Playlists API", () => {
         "/api/playlists/playlist-123/tracks/track-789",
         {
           method: "DELETE",
-        }
+        },
       );
     });
 
@@ -276,7 +284,7 @@ describe("Playlists API", () => {
       mockApiRequest.mockRejectedValueOnce(new Error("Track not found"));
 
       await expect(
-        removeTrackFromPlaylist("playlist-123", "nonexistent")
+        removeTrackFromPlaylist("playlist-123", "nonexistent"),
       ).rejects.toThrow("Track not found");
     });
   });
@@ -294,7 +302,7 @@ describe("Playlists API", () => {
         {
           method: "PATCH",
           body: JSON.stringify({ track_ids: trackIds }),
-        }
+        },
       );
       expect(result).toEqual(reorderedTracks);
     });
@@ -303,7 +311,7 @@ describe("Playlists API", () => {
       mockApiRequest.mockRejectedValueOnce(new Error("Playlist not found"));
 
       await expect(
-        reorderPlaylistTracks("nonexistent", ["track-1"])
+        reorderPlaylistTracks("nonexistent", ["track-1"]),
       ).rejects.toThrow("Playlist not found");
     });
   });
@@ -336,7 +344,7 @@ describe("Playlists API", () => {
       const result = await getReleaseTracks("release-456");
 
       expect(mockApiRequest).toHaveBeenCalledWith(
-        "/api/collection/release-456/tracks"
+        "/api/collection/release-456/tracks",
       );
       expect(result).toEqual(mockReleaseTracksResponse);
     });
@@ -345,7 +353,7 @@ describe("Playlists API", () => {
       mockApiRequest.mockRejectedValueOnce(new Error("Release not found"));
 
       await expect(getReleaseTracks("nonexistent")).rejects.toThrow(
-        "Release not found"
+        "Release not found",
       );
     });
 
@@ -353,7 +361,7 @@ describe("Playlists API", () => {
       mockApiRequest.mockRejectedValueOnce(new Error("Discogs not connected"));
 
       await expect(getReleaseTracks("release-456")).rejects.toThrow(
-        "Discogs not connected"
+        "Discogs not connected",
       );
     });
   });

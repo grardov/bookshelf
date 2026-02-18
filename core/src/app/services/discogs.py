@@ -37,9 +37,7 @@ class DiscogsService:
             salt=b"bookshelf-discogs-oauth",  # Static salt is fine for this use case
             iterations=100000,
         )
-        key = base64.urlsafe_b64encode(
-            kdf.derive(Config.STATE_ENCRYPTION_KEY.encode())
-        )
+        key = base64.urlsafe_b64encode(kdf.derive(Config.STATE_ENCRYPTION_KEY.encode()))
         return Fernet(key)
 
     def _create_client(self) -> discogs_client.Client:

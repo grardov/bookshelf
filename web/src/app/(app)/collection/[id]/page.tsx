@@ -359,10 +359,7 @@ export default function ReleaseDetailPage() {
             </DialogHeader>
             <div className="space-y-3">
               {notesParagraphs.map((paragraph, i) => (
-                <p
-                  key={i}
-                  className="text-sm leading-relaxed text-[#9ca3af]"
-                >
+                <p key={i} className="text-sm leading-relaxed text-[#9ca3af]">
                   {paragraph.trim()}
                 </p>
               ))}

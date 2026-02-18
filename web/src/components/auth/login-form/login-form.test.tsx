@@ -35,13 +35,11 @@ describe("LoginForm", () => {
 
     expect(screen.getByText("Welcome back")).toBeInTheDocument();
     expect(
-      screen.getByText("Log in to your account to continue")
+      screen.getByText("Log in to your account to continue"),
     ).toBeInTheDocument();
     expect(screen.getByLabelText(/email/i)).toBeInTheDocument();
     expect(screen.getByLabelText(/password/i)).toBeInTheDocument();
-    expect(
-      screen.getByRole("button", { name: /log in/i })
-    ).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /log in/i })).toBeInTheDocument();
   });
 
   it("renders link to signup page", () => {
@@ -114,7 +112,10 @@ describe("LoginForm", () => {
   it("disables form inputs while loading", async () => {
     const user = userEvent.setup();
     mockSignInWithPassword.mockImplementation(
-      () => new Promise((resolve) => setTimeout(() => resolve({ error: null, data: {} }), 100))
+      () =>
+        new Promise((resolve) =>
+          setTimeout(() => resolve({ error: null, data: {} }), 100),
+        ),
     );
 
     render(<LoginForm />);
@@ -145,7 +146,7 @@ describe("LoginForm", () => {
       })
       .mockResolvedValueOnce({
         error: null,
-        data: {}
+        data: {},
       });
 
     render(<LoginForm />);

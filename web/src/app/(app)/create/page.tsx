@@ -299,7 +299,10 @@ export default function CreatePage() {
           </div>
         ) : recentPlaylists.length === 0 ? (
           <div className="flex flex-col items-center justify-center rounded-lg border border-[#2a2a2a] bg-[#141414] py-12">
-            <ListMusic className="h-10 w-10 text-[#525252]" aria-hidden="true" />
+            <ListMusic
+              className="h-10 w-10 text-[#525252]"
+              aria-hidden="true"
+            />
             <p className="mt-3 text-sm text-[#525252]">No playlists yet</p>
             <Button
               size="sm"

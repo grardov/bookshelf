@@ -60,10 +60,10 @@ describe("AppSidebar", () => {
 
     expect(screen.getByRole("link", { name: /create/i })).toBeInTheDocument();
     expect(
-      screen.getByRole("link", { name: /collection/i })
+      screen.getByRole("link", { name: /collection/i }),
     ).toBeInTheDocument();
     expect(
-      screen.getByRole("link", { name: /playlists/i })
+      screen.getByRole("link", { name: /playlists/i }),
     ).toBeInTheDocument();
   });
 

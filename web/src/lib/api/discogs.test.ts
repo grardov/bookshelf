@@ -40,26 +40,24 @@ describe("Discogs API", () => {
       mockApiRequest.mockResolvedValueOnce(mockResponse);
 
       const result = await initiateDiscogsAuth(
-        "http://localhost:3000/discogs/callback"
+        "http://localhost:3000/discogs/callback",
       );
 
       expect(mockApiRequest).toHaveBeenCalledWith(
         "/api/discogs/authorize?callback_url=http%3A%2F%2Flocalhost%3A3000%2Fdiscogs%2Fcallback",
-        { method: "POST" }
+        { method: "POST" },
       );
       expect(result.authorization_url).toBe(
-        "https://discogs.com/oauth/authorize?token=xxx"
+        "https://discogs.com/oauth/authorize?token=xxx",
       );
       expect(result.state).toBe("encrypted_state");
     });
 
     it("propagates errors from apiRequest", async () => {
-      mockApiRequest.mockRejectedValueOnce(
-        new Error("Discogs not configured")
-      );
+      mockApiRequest.mockRejectedValueOnce(new Error("Discogs not configured"));
 
       await expect(
-        initiateDiscogsAuth("http://localhost:3000/callback")
+        initiateDiscogsAuth("http://localhost:3000/callback"),
       ).rejects.toThrow("Discogs not configured");
     });
   });
@@ -68,7 +66,10 @@ describe("Discogs API", () => {
     it("calls apiRequest with POST method and body", async () => {
       mockApiRequest.mockResolvedValueOnce(mockUser);
 
-      const result = await completeDiscogsAuth("verifier123", "encrypted_state");
+      const result = await completeDiscogsAuth(
+        "verifier123",
+        "encrypted_state",
+      );
 
       expect(mockApiRequest).toHaveBeenCalledWith("/api/discogs/callback", {
         method: "POST",
@@ -84,7 +85,7 @@ describe("Discogs API", () => {
       mockApiRequest.mockRejectedValueOnce(new Error("Invalid state"));
 
       await expect(
-        completeDiscogsAuth("verifier", "bad_state")
+        completeDiscogsAuth("verifier", "bad_state"),
       ).rejects.toThrow("Invalid state");
     });
   });

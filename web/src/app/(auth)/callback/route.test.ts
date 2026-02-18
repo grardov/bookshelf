@@ -18,17 +18,17 @@ describe("GET /callback", () => {
     vi.mocked(createClient).mockResolvedValue(mockSupabase as any);
 
     const request = new Request(
-      "http://localhost:3000/callback?code=auth-code-123&next=/playlists"
+      "http://localhost:3000/callback?code=auth-code-123&next=/playlists",
     );
 
     const response = await GET(request);
 
     expect(mockSupabase.auth.exchangeCodeForSession).toHaveBeenCalledWith(
-      "auth-code-123"
+      "auth-code-123",
     );
     expect(response.status).toBe(307);
     expect(response.headers.get("location")).toBe(
-      "http://localhost:3000/playlists"
+      "http://localhost:3000/playlists",
     );
   });
 
@@ -41,7 +41,7 @@ describe("GET /callback", () => {
     vi.mocked(createClient).mockResolvedValue(mockSupabase as any);
 
     const request = new Request(
-      "http://localhost:3000/callback?code=auth-code-123"
+      "http://localhost:3000/callback?code=auth-code-123",
     );
 
     const response = await GET(request);
@@ -60,7 +60,7 @@ describe("GET /callback", () => {
     vi.mocked(createClient).mockResolvedValue(mockSupabase as any);
 
     const request = new Request(
-      "http://localhost:3000/callback?code=invalid-code"
+      "http://localhost:3000/callback?code=invalid-code",
     );
 
     const response = await GET(request);

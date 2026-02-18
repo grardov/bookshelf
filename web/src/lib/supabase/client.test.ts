@@ -25,7 +25,7 @@ describe("createClient", () => {
 
     expect(createBrowserClient).toHaveBeenCalledWith(
       "https://example.supabase.co",
-      "test-anon-key"
+      "test-anon-key",
     );
   });
 

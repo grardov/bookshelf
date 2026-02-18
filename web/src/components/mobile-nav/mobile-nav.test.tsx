@@ -65,9 +65,9 @@ describe("MobileNav", () => {
     const menuButton = screen.getByRole("button", { name: /toggle menu/i });
     await user.click(menuButton);
 
-    const createLink = screen.getAllByRole("link").find((link) =>
-      link.textContent?.includes("Create")
-    );
+    const createLink = screen
+      .getAllByRole("link")
+      .find((link) => link.textContent?.includes("Create"));
     expect(createLink).toHaveAttribute("aria-current", "page");
     expect(createLink).toHaveClass("bg-[#141414]", "text-white");
   });
@@ -82,9 +82,9 @@ describe("MobileNav", () => {
 
     expect(screen.getByRole("dialog")).toBeInTheDocument();
 
-    const createLink = screen.getAllByRole("link").find((link) =>
-      link.textContent?.includes("Create")
-    );
+    const createLink = screen
+      .getAllByRole("link")
+      .find((link) => link.textContent?.includes("Create"));
     await user.click(createLink!);
 
     // Menu should close - dialog should not be in document
@@ -123,9 +123,9 @@ describe("MobileNav", () => {
     const menuButton = screen.getByRole("button", { name: /toggle menu/i });
     await user.click(menuButton);
 
-    const playlistsLink = screen.getAllByRole("link").find((link) =>
-      link.textContent?.includes("Playlists")
-    );
+    const playlistsLink = screen
+      .getAllByRole("link")
+      .find((link) => link.textContent?.includes("Playlists"));
     expect(playlistsLink).toHaveAttribute("aria-current", "page");
   });
 
@@ -138,7 +138,7 @@ describe("MobileNav", () => {
     await user.click(menuButton);
 
     expect(
-      screen.getByRole("navigation", { name: /mobile navigation/i })
+      screen.getByRole("navigation", { name: /mobile navigation/i }),
     ).toBeInTheDocument();
   });
 });

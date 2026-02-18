@@ -62,7 +62,8 @@ describe("PlaylistCard", () => {
   });
 
   it("handles long playlist titles with truncation", () => {
-    const longTitle = "This is a very long playlist title that should be truncated";
+    const longTitle =
+      "This is a very long playlist title that should be truncated";
     render(<PlaylistCard {...defaultProps} title={longTitle} />);
 
     const titleElement = screen.getByText(longTitle);
@@ -83,7 +84,7 @@ describe("PlaylistCard", () => {
         duration="1:30:00"
         genre="Jazz"
         createdAt="2024-02-01"
-      />
+      />,
     );
 
     expect(screen.getByText("Morning Jazz")).toBeInTheDocument();

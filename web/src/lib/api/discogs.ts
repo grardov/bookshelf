@@ -17,12 +17,12 @@ export interface DiscogsAuthorizeResponse {
  * @throws Error if request fails or user not authenticated
  */
 export async function initiateDiscogsAuth(
-  callbackUrl: string
+  callbackUrl: string,
 ): Promise<DiscogsAuthorizeResponse> {
   const params = new URLSearchParams({ callback_url: callbackUrl });
   return apiRequest<DiscogsAuthorizeResponse>(
     `/api/discogs/authorize?${params.toString()}`,
-    { method: "POST" }
+    { method: "POST" },
   );
 }
 
@@ -36,7 +36,7 @@ export async function initiateDiscogsAuth(
  */
 export async function completeDiscogsAuth(
   oauthVerifier: string,
-  state: string
+  state: string,
 ): Promise<User> {
   return apiRequest<User>("/api/discogs/callback", {
     method: "POST",

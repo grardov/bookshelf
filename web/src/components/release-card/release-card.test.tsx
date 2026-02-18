@@ -46,7 +46,7 @@ describe("ReleaseCard", () => {
 
     // Format badge would have text like "LP", "CD", etc.
     const formatBadge = container.querySelector(
-      'span[class*="rounded-full"][class*="border"]'
+      'span[class*="rounded-full"][class*="border"]',
     );
     expect(formatBadge).not.toBeInTheDocument();
   });
@@ -56,7 +56,7 @@ describe("ReleaseCard", () => {
       <ReleaseCard
         {...defaultProps}
         coverUrl="https://example.com/homework.jpg"
-      />
+      />,
     );
 
     const image = screen.getByRole("img", {
@@ -65,7 +65,7 @@ describe("ReleaseCard", () => {
     expect(image).toBeInTheDocument();
     expect(image).toHaveAttribute(
       "src",
-      expect.stringContaining("homework.jpg")
+      expect.stringContaining("homework.jpg"),
     );
   });
 
@@ -78,7 +78,7 @@ describe("ReleaseCard", () => {
 
   it("renders year and genre with separator", () => {
     const { container } = render(
-      <ReleaseCard {...defaultProps} year="1997" genre="Electronic" />
+      <ReleaseCard {...defaultProps} year="1997" genre="Electronic" />,
     );
 
     expect(container.textContent).toContain("1997");
@@ -87,9 +87,7 @@ describe("ReleaseCard", () => {
   });
 
   it("renders only year when genre is not provided", () => {
-    const { container } = render(
-      <ReleaseCard {...defaultProps} year="1997" />
-    );
+    const { container } = render(<ReleaseCard {...defaultProps} year="1997" />);
 
     expect(container.textContent).toContain("1997");
     expect(container.textContent).not.toContain("·");
@@ -97,7 +95,7 @@ describe("ReleaseCard", () => {
 
   it("renders only genre when year is not provided", () => {
     const { container } = render(
-      <ReleaseCard {...defaultProps} genre="Electronic" />
+      <ReleaseCard {...defaultProps} genre="Electronic" />,
     );
 
     expect(container.textContent).toContain("Electronic");

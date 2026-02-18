@@ -27,11 +27,17 @@ describe("AppHeader", () => {
     render(<AppHeader title="Styled Title" />);
 
     const heading = screen.getByRole("heading", { level: 1 });
-    expect(heading).toHaveClass("font-heading", "text-2xl", "font-bold", "text-white");
+    expect(heading).toHaveClass(
+      "font-heading",
+      "text-2xl",
+      "font-bold",
+      "text-white",
+    );
   });
 
   it("handles long titles", () => {
-    const longTitle = "This is a very long title that should still render correctly";
+    const longTitle =
+      "This is a very long title that should still render correctly";
     render(<AppHeader title={longTitle} />);
 
     expect(screen.getByText(longTitle)).toBeInTheDocument();

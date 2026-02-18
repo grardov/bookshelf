@@ -8,7 +8,7 @@ interface CustomRenderOptions extends Omit<RenderOptions, "wrapper"> {
 
 export function renderWithProviders(
   ui: ReactElement,
-  { withAuth = true, ...renderOptions }: CustomRenderOptions = {}
+  { withAuth = true, ...renderOptions }: CustomRenderOptions = {},
 ) {
   function Wrapper({ children }: { children: React.ReactNode }) {
     if (withAuth) {

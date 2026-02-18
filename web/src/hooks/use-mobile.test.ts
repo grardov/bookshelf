@@ -61,14 +61,14 @@ describe("useIsMobile", () => {
 
     expect(addEventListenerSpy).toHaveBeenCalledWith(
       "change",
-      expect.any(Function)
+      expect.any(Function),
     );
 
     unmount();
 
     expect(removeEventListenerSpy).toHaveBeenCalledWith(
       "change",
-      expect.any(Function)
+      expect.any(Function),
     );
   });
 

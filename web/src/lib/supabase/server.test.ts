@@ -35,7 +35,7 @@ describe("createClient (server)", () => {
       "test-anon-key",
       expect.objectContaining({
         cookies: expect.any(Object),
-      })
+      }),
     );
   });
 
@@ -62,9 +62,7 @@ describe("createClient (server)", () => {
     await createClient();
 
     const cookiesConfig = vi.mocked(createServerClient).mock.calls[0][2];
-    const cookiesToSet = [
-      { name: "test", value: "value", options: {} },
-    ];
+    const cookiesToSet = [{ name: "test", value: "value", options: {} }];
 
     // Should not throw
     expect(() => cookiesConfig?.cookies?.setAll(cookiesToSet)).not.toThrow();

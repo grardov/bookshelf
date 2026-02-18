@@ -38,7 +38,7 @@ describe("CreatePlaylistDialog", () => {
     render(<CreatePlaylistDialog {...defaultProps} />);
 
     expect(
-      screen.getByRole("heading", { name: /create playlist/i })
+      screen.getByRole("heading", { name: /create playlist/i }),
     ).toBeInTheDocument();
     expect(screen.getByLabelText(/name/i)).toBeInTheDocument();
     expect(screen.getByLabelText(/description/i)).toBeInTheDocument();
@@ -123,7 +123,7 @@ describe("CreatePlaylistDialog", () => {
 
     await waitFor(() => {
       expect(
-        screen.getByText("Failed to create playlist. Please try again.")
+        screen.getByText("Failed to create playlist. Please try again."),
       ).toBeInTheDocument();
     });
   });

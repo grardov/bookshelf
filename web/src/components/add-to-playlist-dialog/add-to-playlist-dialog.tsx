@@ -78,7 +78,9 @@ export function AddToPlaylistDialog({
 
     setIsCreating(true);
     try {
-      const newPlaylist = await createPlaylist({ name: newPlaylistName.trim() });
+      const newPlaylist = await createPlaylist({
+        name: newPlaylistName.trim(),
+      });
       await addTrackToPlaylist(newPlaylist.id, track);
       setPlaylists((prev) => [newPlaylist, ...prev]);
       setAddedTo((prev) => new Set(prev).add(newPlaylist.id));
@@ -166,7 +168,9 @@ export function AddToPlaylistDialog({
                     return (
                       <button
                         key={playlist.id}
-                        onClick={() => !isAddedTo && handleAddToPlaylist(playlist.id)}
+                        onClick={() =>
+                          !isAddedTo && handleAddToPlaylist(playlist.id)
+                        }
                         disabled={isAddedTo || isAddingTo}
                         className="flex w-full items-center gap-3 rounded-md px-3 py-2 text-left transition-colors hover:bg-[#1a1a1a] disabled:opacity-50"
                       >

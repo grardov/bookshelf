@@ -59,7 +59,7 @@ describe("createMetadata", () => {
     expect(metadata.alternates?.canonical).toContain("/settings");
     expect(metadata.openGraph).toHaveProperty(
       "url",
-      expect.stringContaining("/settings")
+      expect.stringContaining("/settings"),
     );
   });
 });

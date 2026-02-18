@@ -43,7 +43,7 @@ describe("updateSession", () => {
       "test-anon-key",
       expect.objectContaining({
         cookies: expect.any(Object),
-      })
+      }),
     );
   });
 
@@ -101,9 +101,7 @@ describe("updateSession", () => {
     await updateSession(request);
 
     const cookiesConfig = vi.mocked(createServerClient).mock.calls[0][2];
-    const mockCookies = [
-      { name: "sb-token", value: "token123", options: {} },
-    ];
+    const mockCookies = [{ name: "sb-token", value: "token123", options: {} }];
 
     // Should be able to call setAll
     expect(() => cookiesConfig?.cookies?.setAll(mockCookies)).not.toThrow();

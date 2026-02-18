@@ -21,7 +21,7 @@ describe("SyncButton", () => {
     render(<SyncButton />);
 
     expect(
-      screen.getByRole("button", { name: /sync collection/i })
+      screen.getByRole("button", { name: /sync collection/i }),
     ).toBeInTheDocument();
   });
 
@@ -43,7 +43,7 @@ describe("SyncButton", () => {
   it("shows syncing state when clicked", async () => {
     const user = userEvent.setup();
     mockSyncCollection.mockImplementation(
-      () => new Promise((resolve) => setTimeout(resolve, 100))
+      () => new Promise((resolve) => setTimeout(resolve, 100)),
     );
 
     render(<SyncButton />);
@@ -148,7 +148,7 @@ describe("SyncButton", () => {
   it("applies animate-spin class to icon while syncing", async () => {
     const user = userEvent.setup();
     mockSyncCollection.mockImplementation(
-      () => new Promise((resolve) => setTimeout(resolve, 100))
+      () => new Promise((resolve) => setTimeout(resolve, 100)),
     );
 
     const { container } = render(<SyncButton />);

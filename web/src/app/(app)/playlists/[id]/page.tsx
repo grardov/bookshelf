@@ -3,7 +3,14 @@
 import { useState, useEffect, useCallback } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
-import { ArrowLeft, Play, Pencil, Trash2, Loader2, ListMusic } from "lucide-react";
+import {
+  ArrowLeft,
+  Play,
+  Pencil,
+  Trash2,
+  Loader2,
+  ListMusic,
+} from "lucide-react";
 import {
   DndContext,
   closestCenter,
@@ -68,7 +75,7 @@ export default function PlaylistDetailPage() {
     }),
     useSensor(KeyboardSensor, {
       coordinateGetter: sortableKeyboardCoordinates,
-    })
+    }),
   );
 
   // Edit form state
@@ -126,7 +133,7 @@ export default function PlaylistDetailPage() {
               description: updated.description,
               tags: updated.tags,
             }
-          : null
+          : null,
       );
       setEditOpen(false);
     } catch (err) {
@@ -157,7 +164,7 @@ export default function PlaylistDetailPage() {
               tracks: prev.tracks.filter((t) => t.id !== trackId),
               track_count: prev.track_count - 1,
             }
-          : null
+          : null,
       );
     } catch (err) {
       console.error("Failed to remove track:", err);
@@ -304,7 +311,10 @@ export default function PlaylistDetailPage() {
       <section aria-label="Track list">
         {playlist.tracks.length === 0 ? (
           <div className="flex flex-col items-center justify-center rounded-lg border border-[#2a2a2a] bg-[#141414] py-12">
-            <ListMusic className="h-10 w-10 text-[#525252]" aria-hidden="true" />
+            <ListMusic
+              className="h-10 w-10 text-[#525252]"
+              aria-hidden="true"
+            />
             <p className="mt-4 text-sm text-[#525252]">
               No tracks in this playlist yet
             </p>
@@ -429,7 +439,10 @@ export default function PlaylistDetailPage() {
                 Cancel
               </Button>
             </DialogClose>
-            <Button onClick={handleEditSave} disabled={!editName.trim() || isSaving}>
+            <Button
+              onClick={handleEditSave}
+              disabled={!editName.trim() || isSaving}
+            >
               {isSaving ? (
                 <Loader2 className="h-4 w-4 animate-spin" />
               ) : (

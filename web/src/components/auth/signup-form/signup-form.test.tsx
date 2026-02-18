@@ -31,13 +31,13 @@ describe("SignupForm", () => {
 
     expect(screen.getByText("Create an account")).toBeInTheDocument();
     expect(
-      screen.getByText("Get started with your Discogs collection")
+      screen.getByText("Get started with your Discogs collection"),
     ).toBeInTheDocument();
     expect(screen.getByLabelText(/^email$/i)).toBeInTheDocument();
     expect(screen.getByLabelText(/^password$/i)).toBeInTheDocument();
     expect(screen.getByLabelText(/confirm password/i)).toBeInTheDocument();
     expect(
-      screen.getByRole("button", { name: /create account/i })
+      screen.getByRole("button", { name: /create account/i }),
     ).toBeInTheDocument();
   });
 
@@ -102,7 +102,7 @@ describe("SignupForm", () => {
 
     await waitFor(() => {
       expect(
-        screen.getByText("Password must be at least 6 characters")
+        screen.getByText("Password must be at least 6 characters"),
       ).toBeInTheDocument();
     });
 
@@ -133,7 +133,10 @@ describe("SignupForm", () => {
   it("disables form inputs while loading", async () => {
     const user = userEvent.setup();
     mockSignUp.mockImplementation(
-      () => new Promise((resolve) => setTimeout(() => resolve({ error: null, data: {} }), 100))
+      () =>
+        new Promise((resolve) =>
+          setTimeout(() => resolve({ error: null, data: {} }), 100),
+        ),
     );
 
     render(<SignupForm />);
@@ -169,12 +172,12 @@ describe("SignupForm", () => {
 
     await waitFor(() => {
       expect(
-        screen.getByText("Password must be at least 6 characters")
+        screen.getByText("Password must be at least 6 characters"),
       ).toBeInTheDocument();
     });
 
     expect(
-      screen.queryByText("Passwords do not match")
+      screen.queryByText("Passwords do not match"),
     ).not.toBeInTheDocument();
   });
 });
