@@ -98,6 +98,10 @@ make release          # bumps version, updates CHANGELOG.md, commits, tags
 git push --follow-tags
 ```
 
+## Credits
+
+BPM and key data provided by [GetSongBPM](https://getsongbpm.com).
+
 ## License
 
 TBD
