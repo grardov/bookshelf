@@ -3,7 +3,7 @@ import Link from "next/link";
 import { Disc3 } from "lucide-react";
 
 export interface ReleaseCardProps {
-  id: string;
+  discogsReleaseId: number;
   title: string;
   artist: string;
   year?: number | string | null;
@@ -13,7 +13,7 @@ export interface ReleaseCardProps {
 }
 
 export function ReleaseCard({
-  id,
+  discogsReleaseId,
   title,
   artist,
   year,
@@ -22,7 +22,7 @@ export function ReleaseCard({
   coverUrl,
 }: ReleaseCardProps) {
   return (
-    <Link href={`/collection/${id}`} className="block">
+    <Link href={`/release/${discogsReleaseId}`} className="block">
       <article className="group relative flex flex-col rounded-lg border border-[#2a2a2a] bg-[#141414] p-3 transition-colors hover:border-[#404040]">
         {/* Album art */}
         <div className="mb-3 flex aspect-square items-center justify-center overflow-hidden rounded-md bg-[#1a1a1a]">

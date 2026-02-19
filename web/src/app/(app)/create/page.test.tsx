@@ -1,11 +1,52 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { render, screen, waitFor } from "@testing-library/react";
-import userEvent from "@testing-library/user-event";
 import CreatePage from "./page";
+
+// Mock next/navigation
+vi.mock("next/navigation", () => ({
+  useRouter: () => ({
+    push: vi.fn(),
+    replace: vi.fn(),
+    back: vi.fn(),
+  }),
+}));
 
 // Mock the playlists API
 vi.mock("@/lib/api/playlists", () => ({
   listPlaylists: vi.fn(),
+}));
+
+// Mock the discogs API
+vi.mock("@/lib/api/discogs", () => ({
+  searchDiscogs: vi.fn(),
+}));
+
+// Mock hooks
+const mockSearchHistory = {
+  history: [] as {
+    id: number;
+    title: string;
+    year: number | null;
+    cover_image: string | null;
+    format: string | null;
+    label: string | null;
+    timestamp: number;
+  }[],
+  addSearch: vi.fn(),
+  removeSearch: vi.fn(),
+  clearHistory: vi.fn(),
+};
+vi.mock("@/hooks/use-search-history", () => ({
+  useSearchHistory: () => mockSearchHistory,
+}));
+
+// Mock auth context
+vi.mock("@/contexts/auth-context", () => ({
+  useAuth: () => ({
+    profile: {
+      discogs_connected_at: "2026-01-01T00:00:00Z",
+    },
+  }),
 }));
 
 import { listPlaylists } from "@/lib/api/playlists";
@@ -28,6 +69,15 @@ vi.mock("@/components/playlist-card", () => ({
   ),
 }));
 
+// Mock SearchResultRow
+vi.mock("@/components/search-result-row", () => ({
+  SearchResultRow: ({ title }: { title: string }) => (
+    <div data-testid="search-result-row">
+      <span>{title}</span>
+    </div>
+  ),
+}));
+
 // Mock CreatePlaylistDialog
 vi.mock("@/components/create-playlist-dialog", () => ({
   CreatePlaylistDialog: ({
@@ -38,53 +88,6 @@ vi.mock("@/components/create-playlist-dialog", () => ({
   }) =>
     open ? <div data-testid="create-playlist-dialog">Dialog open</div> : null,
 }));
-
-// Mock framer-motion to avoid animation issues in tests
-vi.mock("framer-motion", () => ({
-  motion: {
-    div: ({
-      children,
-      ...props
-    }: React.PropsWithChildren<Record<string, unknown>>) => (
-      <div {...filterMotionProps(props)}>{children}</div>
-    ),
-    h1: ({
-      children,
-      ...props
-    }: React.PropsWithChildren<Record<string, unknown>>) => (
-      <h1 {...filterMotionProps(props)}>{children}</h1>
-    ),
-    form: ({
-      children,
-      ...props
-    }: React.PropsWithChildren<React.FormHTMLAttributes<HTMLFormElement>>) => (
-      <form {...filterMotionProps(props)}>{children}</form>
-    ),
-  },
-  AnimatePresence: ({
-    children,
-  }: React.PropsWithChildren<Record<string, unknown>>) => <>{children}</>,
-}));
-
-// Filter out framer-motion specific props to avoid React warnings
-function filterMotionProps(
-  props: Record<string, unknown>,
-): Record<string, unknown> {
-  const {
-    initial,
-    animate,
-    exit,
-    transition,
-    whileHover,
-    whileTap,
-    variants,
-    layout,
-    style,
-    ...rest
-  } = props;
-  // Keep style since it's a valid HTML attribute
-  return { ...rest, style: style as React.CSSProperties | undefined };
-}
 
 const mockPlaylists = [
   {
@@ -112,6 +115,7 @@ const mockPlaylists = [
 describe("CreatePage", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    mockSearchHistory.history = [];
     mockListPlaylists.mockResolvedValue({
       items: mockPlaylists,
       total: 2,
@@ -121,122 +125,26 @@ describe("CreatePage", () => {
     });
   });
 
-  it("renders the AI mode heading by default", async () => {
+  it("renders the search heading", async () => {
     render(<CreatePage />);
 
     await waitFor(() => {
-      expect(
-        screen.getByText((_content, element) => {
-          return element?.textContent === "What do you wantto listen to?";
-        }),
-      ).toBeInTheDocument();
+      expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent(
+        "Find your release",
+      );
     });
   });
 
-  it("renders AI and Manual mode toggle buttons", () => {
+  it("renders the search input as a combobox", () => {
     render(<CreatePage />);
 
-    expect(screen.getByText("AI")).toBeInTheDocument();
-    expect(screen.getByText("Manual")).toBeInTheDocument();
-  });
-
-  it("renders suggestion chips in AI mode", async () => {
-    render(<CreatePage />);
-
-    await waitFor(() => {
-      expect(screen.getByText("Deep house session")).toBeInTheDocument();
-      expect(screen.getByText("Sunday morning vinyl")).toBeInTheDocument();
-      expect(screen.getByText("Party warm-up set")).toBeInTheDocument();
-      expect(screen.getByText("Crate digging gems")).toBeInTheDocument();
-      expect(screen.getByText("Late night radio")).toBeInTheDocument();
-    });
-  });
-
-  it("renders the prompt input with AI placeholder in AI mode", () => {
-    render(<CreatePage />);
-
-    const input = screen.getByLabelText(/playlist prompt/i);
+    const input = screen.getByRole("combobox", { name: /search discogs/i });
     expect(input).toBeInTheDocument();
     expect(input).toHaveAttribute(
       "placeholder",
-      "e.g., Late night drive through the city...",
+      "Search artists, albums, labels...",
     );
-  });
-
-  it("renders the 'Create' button", () => {
-    render(<CreatePage />);
-
-    expect(screen.getByRole("button", { name: /create/i })).toBeInTheDocument();
-  });
-
-  it("switches to manual mode when Manual button is clicked", async () => {
-    const user = userEvent.setup();
-    render(<CreatePage />);
-
-    const manualButton = screen.getByText("Manual");
-    await user.click(manualButton);
-
-    await waitFor(() => {
-      expect(
-        screen.getByText((_content, element) => {
-          return element?.textContent === "Create yourplaylist";
-        }),
-      ).toBeInTheDocument();
-    });
-  });
-
-  it("shows playlist name input with manual placeholder in manual mode", async () => {
-    const user = userEvent.setup();
-    render(<CreatePage />);
-
-    const manualButton = screen.getByText("Manual");
-    await user.click(manualButton);
-
-    const input = screen.getByLabelText(/playlist name/i);
-    expect(input).toBeInTheDocument();
-    expect(input).toHaveAttribute("placeholder", "My awesome playlist...");
-  });
-
-  it("disables suggestion chips in manual mode", async () => {
-    const user = userEvent.setup();
-    render(<CreatePage />);
-
-    const manualButton = screen.getByText("Manual");
-    await user.click(manualButton);
-
-    const chipButtons = screen
-      .getAllByRole("button")
-      .filter((btn) => btn.textContent === "Deep house session");
-    expect(chipButtons[0]).toBeDisabled();
-  });
-
-  it("switches back to AI mode when AI button is clicked", async () => {
-    const user = userEvent.setup();
-    render(<CreatePage />);
-
-    // Switch to manual first
-    await user.click(screen.getByText("Manual"));
-    // Switch back to AI
-    await user.click(screen.getByText("AI"));
-
-    await waitFor(() => {
-      expect(
-        screen.getByText((_content, element) => {
-          return element?.textContent === "What do you wantto listen to?";
-        }),
-      ).toBeInTheDocument();
-    });
-  });
-
-  it("fills the prompt when a suggestion chip is clicked", async () => {
-    const user = userEvent.setup();
-    render(<CreatePage />);
-
-    const chip = screen.getByText("Deep house session");
-    await user.click(chip);
-
-    const input = screen.getByLabelText(/playlist prompt/i);
-    expect(input).toHaveValue("Deep house session for late night vibes");
+    expect(input).toHaveAttribute("aria-expanded", "false");
   });
 
   describe("recent playlists", () => {
@@ -339,9 +247,81 @@ describe("CreatePage", () => {
     });
   });
 
-  it("renders 'Start with an idea' text", () => {
-    render(<CreatePage />);
+  describe("recent searches", () => {
+    const historyItems = [
+      {
+        id: 123,
+        title: "Random Access Memories",
+        year: 2013,
+        cover_image: "https://example.com/cover.jpg",
+        format: "2xLP",
+        label: "Columbia",
+        timestamp: Date.now(),
+      },
+      {
+        id: 456,
+        title: "Discovery",
+        year: 2001,
+        cover_image: null,
+        format: "CD",
+        label: "Virgin",
+        timestamp: Date.now() - 1000,
+      },
+    ];
 
-    expect(screen.getByText("Start with an idea")).toBeInTheDocument();
+    it("shows recent searches section when history exists", async () => {
+      mockSearchHistory.history = historyItems;
+
+      render(<CreatePage />);
+
+      await waitFor(() => {
+        expect(screen.getByText("Recent searches")).toBeInTheDocument();
+      });
+    });
+
+    it("renders release cards with title and metadata", async () => {
+      mockSearchHistory.history = historyItems;
+
+      render(<CreatePage />);
+
+      await waitFor(() => {
+        expect(screen.getByText("Random Access Memories")).toBeInTheDocument();
+        expect(screen.getByText("Discovery")).toBeInTheDocument();
+      });
+
+      expect(screen.getByText("2xLP · 2013")).toBeInTheDocument();
+      expect(screen.getByText("CD · 2001")).toBeInTheDocument();
+    });
+
+    it("links release cards to release detail page", async () => {
+      mockSearchHistory.history = historyItems;
+
+      render(<CreatePage />);
+
+      await waitFor(() => {
+        const links = screen.getAllByRole("link", {
+          name: /random access memories|discovery/i,
+        });
+        expect(links[0]).toHaveAttribute("href", "/release/123");
+      });
+    });
+
+    it("does not show recent searches when history is empty", () => {
+      mockSearchHistory.history = [];
+
+      render(<CreatePage />);
+
+      expect(screen.queryByText("Recent searches")).not.toBeInTheDocument();
+    });
+
+    it("shows clear button", async () => {
+      mockSearchHistory.history = historyItems;
+
+      render(<CreatePage />);
+
+      await waitFor(() => {
+        expect(screen.getByText("Clear")).toBeInTheDocument();
+      });
+    });
   });
 });

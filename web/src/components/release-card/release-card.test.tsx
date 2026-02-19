@@ -4,7 +4,7 @@ import { ReleaseCard } from "./release-card";
 
 describe("ReleaseCard", () => {
   const defaultProps = {
-    id: "release-1",
+    discogsReleaseId: 12345,
     title: "Homework",
     artist: "Daft Punk",
   };
@@ -20,7 +20,7 @@ describe("ReleaseCard", () => {
     render(<ReleaseCard {...defaultProps} />);
 
     const link = screen.getByRole("link");
-    expect(link).toHaveAttribute("href", "/collection/release-1");
+    expect(link).toHaveAttribute("href", "/release/12345");
   });
 
   it("renders year when provided", () => {

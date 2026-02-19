@@ -1,81 +1,165 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import Link from "next/link";
-import { motion, AnimatePresence } from "framer-motion";
-import {
-  Sparkles,
-  Search,
-  Headphones,
-  Disc3,
-  Radio,
-  Sunrise,
-  PartyPopper,
-  Wand2,
-  PenLine,
-  ListMusic,
-  Plus,
-} from "lucide-react";
+import { useRouter } from "next/navigation";
+import { Search, ListMusic, Plus, X, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { PlaylistCard } from "@/components/playlist-card";
+import { SearchResultRow } from "@/components/search-result-row";
 import { CreatePlaylistDialog } from "@/components/create-playlist-dialog";
 import { listPlaylists, type Playlist } from "@/lib/api/playlists";
-
-const suggestions = [
-  {
-    label: "Deep house session",
-    icon: Headphones,
-    prompt: "Deep house session for late night vibes",
-  },
-  {
-    label: "Sunday morning vinyl",
-    icon: Sunrise,
-    prompt: "Relaxed Sunday morning vinyl selection",
-  },
-  {
-    label: "Party warm-up set",
-    icon: PartyPopper,
-    prompt: "Party warm-up set to get the crowd moving",
-  },
-  {
-    label: "Crate digging gems",
-    icon: Disc3,
-    prompt: "Hidden crate digging gems from my collection",
-  },
-  {
-    label: "Late night radio",
-    icon: Radio,
-    prompt: "Late night radio mix for the after hours",
-  },
-];
-
-type CreatorMode = "ai" | "manual";
+import { searchDiscogs, type DiscogsSearchResult } from "@/lib/api/discogs";
+import { useSearchHistory } from "@/hooks/use-search-history";
+import { useAuth } from "@/contexts/auth-context";
+import { AppHeader } from "@/components/app-header/app-header";
 
 export default function CreatePage() {
-  const [mode, setMode] = useState<CreatorMode>("ai");
-  const [prompt, setPrompt] = useState("");
-  const [playlistName, setPlaylistName] = useState("");
+  const router = useRouter();
+  const { profile } = useAuth();
+  const { history, addSearch, removeSearch, clearHistory } = useSearchHistory();
+
+  const [query, setQuery] = useState("");
+  const [searchResults, setSearchResults] = useState<DiscogsSearchResult[]>([]);
+  const [isSearching, setIsSearching] = useState(false);
+  const [hasSearched, setHasSearched] = useState(false);
+
   const [recentPlaylists, setRecentPlaylists] = useState<Playlist[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoadingPlaylists, setIsLoadingPlaylists] = useState(true);
   const [createOpen, setCreateOpen] = useState(false);
 
+  const debounceRef = useRef<ReturnType<typeof setTimeout>>(null);
+  const searchContainerRef = useRef<HTMLDivElement>(null);
+  const listboxRef = useRef<HTMLDivElement>(null);
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const [activeIndex, setActiveIndex] = useState(-1);
+
+  const isDiscogsConnected = !!profile?.discogs_connected_at;
+
+  // Close dropdown on click outside
+  useEffect(() => {
+    function handleClickOutside(e: MouseEvent) {
+      if (
+        searchContainerRef.current &&
+        !searchContainerRef.current.contains(e.target as Node)
+      ) {
+        setIsDropdownOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  // Fetch recent playlists
   const fetchRecentPlaylists = useCallback(async () => {
-    setIsLoading(true);
+    setIsLoadingPlaylists(true);
     try {
       const response = await listPlaylists(1, 5);
       setRecentPlaylists(response.items);
     } catch (err) {
       console.error("Failed to fetch playlists:", err);
     } finally {
-      setIsLoading(false);
+      setIsLoadingPlaylists(false);
     }
   }, []);
 
   useEffect(() => {
     fetchRecentPlaylists();
   }, [fetchRecentPlaylists]);
+
+  // Debounced search
+  useEffect(() => {
+    if (!query.trim()) {
+      setSearchResults([]);
+      setHasSearched(false);
+      setIsDropdownOpen(false);
+      return;
+    }
+
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+
+    // Close dropdown immediately while waiting for new results
+    setIsDropdownOpen(false);
+    setHasSearched(false);
+
+    debounceRef.current = setTimeout(async () => {
+      setIsSearching(true);
+      try {
+        const response = await searchDiscogs(query.trim());
+        setSearchResults(response.results);
+        setActiveIndex(-1);
+        setHasSearched(true);
+        setIsDropdownOpen(true);
+      } catch (err) {
+        console.error("Failed to search Discogs:", err);
+        setSearchResults([]);
+      } finally {
+        setIsSearching(false);
+      }
+    }, 300);
+
+    return () => {
+      if (debounceRef.current) clearTimeout(debounceRef.current);
+    };
+  }, [query]);
+
+  const handleResultClick = (result: DiscogsSearchResult) => {
+    addSearch({
+      id: result.id,
+      title: result.title,
+      year: result.year,
+      cover_image: result.cover_image,
+      format: result.format,
+      label: result.label,
+    });
+    setIsDropdownOpen(false);
+    router.push(`/release/${result.id}`);
+  };
+
+  const handleSearchKeyDown = (e: React.KeyboardEvent) => {
+    if (!isDropdownOpen || searchResults.length === 0) return;
+
+    switch (e.key) {
+      case "ArrowDown":
+        e.preventDefault();
+        setActiveIndex((prev) => {
+          const next = prev < searchResults.length - 1 ? prev + 1 : 0;
+          scrollOptionIntoView(next);
+          return next;
+        });
+        break;
+      case "ArrowUp":
+        e.preventDefault();
+        setActiveIndex((prev) => {
+          const next = prev > 0 ? prev - 1 : searchResults.length - 1;
+          scrollOptionIntoView(next);
+          return next;
+        });
+        break;
+      case "Enter":
+        e.preventDefault();
+        if (activeIndex >= 0 && activeIndex < searchResults.length) {
+          handleResultClick(searchResults[activeIndex]);
+        }
+        break;
+      case "Escape":
+        e.preventDefault();
+        setIsDropdownOpen(false);
+        setActiveIndex(-1);
+        break;
+    }
+  };
+
+  const scrollOptionIntoView = (index: number) => {
+    const listbox = listboxRef.current;
+    if (!listbox) return;
+    const option = listbox.querySelector(`[data-index="${index}"]`);
+    if (option) {
+      option.scrollIntoView({ block: "nearest" });
+    }
+  };
 
   const handleCreateSuccess = (newPlaylist: Playlist) => {
     setRecentPlaylists((prev) => [newPlaylist, ...prev].slice(0, 5));
@@ -96,164 +180,178 @@ export default function CreatePage() {
 
   return (
     <main className="flex flex-1 flex-col">
-      {/* Hero prompt section */}
-      <section
-        className="flex flex-1 flex-col items-center justify-center py-16 md:py-24"
-        aria-labelledby="hero-heading"
-      >
-        {/* Mode toggle */}
-        <div className="relative mb-6 flex items-center gap-2 rounded-full border border-[#2a2a2a] bg-[#141414]">
-          <motion.div
-            className="absolute inset-y-0.5 rounded-full bg-primary"
-            initial={false}
-            animate={{
-              x: mode === "ai" ? 0 : "100%",
-              width: "calc(50% - 2px)",
-            }}
-            transition={{ type: "spring", stiffness: 400, damping: 30 }}
-            style={{ left: 2 }}
-          />
-          <button
-            type="button"
-            onClick={() => setMode("ai")}
-            className={`relative z-10 flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-medium transition-colors cursor-pointer ${
-              mode === "ai"
-                ? "text-white"
-                : "text-[#525252] hover:text-[#9ca3af]"
-            }`}
-          >
-            <Wand2 className="h-3" aria-hidden="true" />
-            AI
-          </button>
-          <button
-            type="button"
-            onClick={() => setMode("manual")}
-            className={`relative z-10 flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-medium transition-colors cursor-pointer ${
-              mode === "manual"
-                ? "text-white"
-                : "text-[#525252] hover:text-[#9ca3af]"
-            }`}
-          >
-            <PenLine className="h-3" aria-hidden="true" />
-            Manual
-          </button>
-        </div>
+      {/* Search section */}
+      <section className="py-6" aria-labelledby="hero-heading">
+        <AppHeader title="Find your release" />
 
-        {/* Animated heading */}
-        <AnimatePresence mode="wait">
-          <motion.h1
-            key={mode}
-            id="hero-heading"
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -10 }}
-            transition={{ duration: 0.2 }}
-            className="mb-8 text-center font-heading text-3xl font-bold tracking-tight text-white md:text-5xl"
-          >
-            {mode === "ai" ? (
-              <>
-                What do you want
-                <br />
-                to listen to?
-              </>
-            ) : (
-              <>
-                Create your
-                <br />
-                playlist
-              </>
-            )}
-          </motion.h1>
-        </AnimatePresence>
-
-        {/* Input section */}
-        <div className="w-full max-w-2xl">
-          <AnimatePresence mode="wait">
-            <motion.form
-              key={mode}
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -10 }}
-              transition={{ duration: 0.2 }}
-              className="w-full"
-              aria-label={
-                mode === "ai"
-                  ? "Create playlist with AI"
-                  : "Create playlist manually"
-              }
-            >
+        {/* Search bar + dropdown */}
+        <div className="relative w-full" ref={searchContainerRef}>
+          {isDiscogsConnected ? (
+            <>
               <div className="flex items-center gap-3 rounded-full border border-[#2a2a2a] bg-[#0a0a0a] py-2 pl-5 pr-2 transition-colors focus-within:border-[#404040]">
-                {mode === "ai" ? (
-                  <Search
-                    className="h-5 w-5 shrink-0 text-[#525252]"
-                    aria-hidden="true"
-                  />
-                ) : (
-                  <PenLine
-                    className="h-5 w-5 shrink-0 text-[#525252]"
-                    aria-hidden="true"
-                  />
-                )}
+                <Search
+                  className="h-5 w-5 shrink-0 text-[#525252]"
+                  aria-hidden="true"
+                />
                 <Input
                   type="text"
-                  value={mode === "ai" ? prompt : playlistName}
-                  onChange={(e) =>
-                    mode === "ai"
-                      ? setPrompt(e.target.value)
-                      : setPlaylistName(e.target.value)
-                  }
-                  placeholder={
-                    mode === "ai"
-                      ? "e.g., Late night drive through the city..."
-                      : "My awesome playlist..."
-                  }
+                  value={query}
+                  onChange={(e) => setQuery(e.target.value)}
+                  onFocus={() => {
+                    if (hasSearched && query.trim()) setIsDropdownOpen(true);
+                  }}
+                  onKeyDown={handleSearchKeyDown}
+                  placeholder="Search artists, albums, labels..."
                   className="h-auto flex-1 border-0 bg-transparent p-0 text-base text-white placeholder:text-[#525252] shadow-none focus-visible:ring-0 dark:bg-transparent"
-                  aria-label={
-                    mode === "ai" ? "Playlist prompt" : "Playlist name"
+                  role="combobox"
+                  aria-label="Search Discogs"
+                  aria-expanded={isDropdownOpen}
+                  aria-controls="search-listbox"
+                  aria-activedescendant={
+                    activeIndex >= 0
+                      ? `search-option-${searchResults[activeIndex]?.id}`
+                      : undefined
                   }
                 />
-                <Button
-                  type="submit"
-                  className="shrink-0 gap-2 rounded-full bg-primary px-5 text-white hover:bg-primary/90"
-                >
-                  Create
-                  {mode === "ai" && (
-                    <Sparkles className="h-4 w-4" aria-hidden="true" />
-                  )}
-                </Button>
+                {query && (
+                  <button
+                    type="button"
+                    onClick={() => setQuery("")}
+                    className="mr-1 rounded-full p-1.5 text-[#525252] transition-colors hover:text-white"
+                    aria-label="Clear search"
+                  >
+                    <X className="h-4 w-4" />
+                  </button>
+                )}
+                {isSearching && (
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin text-[#525252]" />
+                )}
               </div>
-            </motion.form>
-          </AnimatePresence>
+
+              {/* Search results dropdown */}
+              {isDropdownOpen && query.trim() && (
+                <div
+                  ref={listboxRef}
+                  id="search-listbox"
+                  role="listbox"
+                  aria-label="Search results"
+                  className="absolute left-0 right-0 top-full z-50 mt-2 max-h-100 overflow-y-auto rounded-xl border border-[#2a2a2a] bg-[#0a0a0a] shadow-2xl"
+                >
+                  {isSearching && !hasSearched ? (
+                    <div className="flex items-center justify-center py-6">
+                      <Loader2 className="h-4 w-4 animate-spin text-[#525252]" />
+                      <span className="ml-2 text-sm text-[#525252]">
+                        Searching Discogs...
+                      </span>
+                    </div>
+                  ) : searchResults.length > 0 ? (
+                    <div className="py-1">
+                      {searchResults.map((result, index) => (
+                        <SearchResultRow
+                          key={result.id}
+                          id={result.id}
+                          title={result.title}
+                          year={result.year}
+                          coverImage={result.cover_image}
+                          format={result.format}
+                          label={result.label}
+                          active={index === activeIndex}
+                          dataIndex={index}
+                          onClick={() => handleResultClick(result)}
+                        />
+                      ))}
+                    </div>
+                  ) : hasSearched ? (
+                    <p className="py-6 text-center text-sm text-[#525252]">
+                      No results found for &quot;{query}&quot;
+                    </p>
+                  ) : null}
+                </div>
+              )}
+            </>
+          ) : (
+            <div className="rounded-lg border border-[#2a2a2a] bg-[#141414] p-6 text-center">
+              <p className="text-sm text-[#525252]">
+                Connect your Discogs account to search releases.
+              </p>
+              <Button size="sm" className="mt-3" asChild>
+                <Link href="/settings">Go to Settings</Link>
+              </Button>
+            </div>
+          )}
         </div>
 
-        {/* Start with an idea */}
-        <p
-          className={`mt-6 text-xs font-medium uppercase tracking-widest transition-opacity duration-200 ${
-            mode === "ai" ? "text-[#525252]" : "text-[#525252]/30"
-          }`}
-        >
-          Start with an idea
-        </p>
-
-        {/* Suggestion chips */}
-        <div
-          className={`mt-3 flex flex-wrap items-center justify-center gap-2 transition-opacity duration-200 ${
-            mode === "ai" ? "opacity-100" : "pointer-events-none opacity-30"
-          }`}
-        >
-          {suggestions.map((s) => (
-            <button
-              key={s.label}
-              type="button"
-              onClick={() => setPrompt(s.prompt)}
-              disabled={mode !== "ai"}
-              className="inline-flex items-center gap-1.5 rounded-full border border-[#2a2a2a] bg-transparent px-3.5 py-2 text-sm text-[#9ca3af] transition-colors hover:border-[#404040] hover:text-white disabled:cursor-not-allowed"
-            >
-              <s.icon className="h-3.5 w-3.5" aria-hidden="true" />
-              {s.label}
-            </button>
-          ))}
-        </div>
+        {/* Recent searches */}
+        {isDiscogsConnected && history.length > 0 && (
+          <div className="mt-8 w-full">
+            <div className="mb-4 flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <span
+                  className="h-1.5 w-1.5 rounded-full bg-primary"
+                  aria-hidden="true"
+                />
+                <h2 className="font-heading text-lg font-semibold text-white">
+                  Recent searches
+                </h2>
+              </div>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="text-[#525252] hover:text-white"
+                onClick={clearHistory}
+              >
+                Clear
+              </Button>
+            </div>
+            <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 md:grid-cols-5">
+              {history.slice(0, 10).map((item) => (
+                <Link
+                  key={`search-${item.id}`}
+                  id={`search-${item.id}`}
+                  href={`/release/${item.id}`}
+                  className="group relative flex flex-col overflow-hidden rounded-lg border border-[#2a2a2a] bg-[#141414] transition-colors hover:border-[#404040]"
+                >
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      removeSearch(item.id);
+                    }}
+                    className="absolute right-1 top-1 z-10 hidden rounded-full bg-black/70 p-1 text-[#525252] transition-colors hover:text-white group-hover:block"
+                    aria-label={`Remove "${item.title}" from recent searches`}
+                  >
+                    <X className="h-3 w-3" />
+                  </button>
+                  <div className="aspect-square w-full bg-[#1a1a1a]">
+                    {item.cover_image ? (
+                      <img
+                        src={item.cover_image}
+                        alt=""
+                        className="h-full w-full object-cover"
+                      />
+                    ) : (
+                      <div className="flex h-full w-full items-center justify-center">
+                        <Search
+                          className="h-6 w-6 text-[#333]"
+                          aria-hidden="true"
+                        />
+                      </div>
+                    )}
+                  </div>
+                  <div className="flex flex-col gap-0.5 p-2">
+                    <span className="truncate text-xs font-medium text-white">
+                      {item.title}
+                    </span>
+                    <span className="truncate text-[10px] text-[#525252]">
+                      {[item.format, item.year].filter(Boolean).join(" · ")}
+                    </span>
+                  </div>
+                </Link>
+              ))}
+            </div>
+          </div>
+        )}
       </section>
 
       {/* Recent playlists */}
@@ -283,7 +381,7 @@ export default function CreatePage() {
           )}
         </div>
 
-        {isLoading ? (
+        {isLoadingPlaylists ? (
           <div className="space-y-2">
             {[1, 2, 3].map((i) => (
               <div

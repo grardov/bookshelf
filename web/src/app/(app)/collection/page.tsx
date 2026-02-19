@@ -140,7 +140,7 @@ export default function CollectionPage() {
             {releases.map((release) => (
               <ReleaseCard
                 key={release.id}
-                id={release.id}
+                discogsReleaseId={release.discogs_release_id}
                 title={release.title}
                 artist={release.artist_name}
                 year={release.year}
