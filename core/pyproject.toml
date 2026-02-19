@@ -11,6 +11,7 @@ version = "0.1.0"
 description = "Bookshelf API — FastAPI backend"
 requires-python = ">=3.12"
 dependencies = [
+    "cachetools>=5.3.0",
     "cryptography>=42.0.0",
     "fastapi",
     "python-dotenv>=1.2.1",

@@ -216,3 +216,74 @@ class ReleaseTracksResponse(BaseModel):
     styles: list[str] = Field(default_factory=list)
     labels: list[dict[str, Any]] | None = None
     formats: list[dict[str, Any]] | None = None
+
+
+# =============================================
+# Discogs Search Models
+# =============================================
+
+
+class DiscogsSearchResult(BaseModel):
+    """Single search result from Discogs."""
+
+    id: int = Field(..., description="Discogs release ID")
+    title: str
+    year: int | None = None
+    cover_image: str | None = None
+    format: str | None = None
+    label: str | None = None
+    country: str | None = None
+    type: str = "release"
+
+
+class DiscogsSearchPagination(BaseModel):
+    """Pagination info from Discogs search."""
+
+    page: int
+    pages: int
+    per_page: int
+    items: int
+
+
+class DiscogsSearchResponse(BaseModel):
+    """Response from Discogs search endpoint."""
+
+    results: list[DiscogsSearchResult]
+    pagination: DiscogsSearchPagination
+
+
+class DiscogsReleaseDetail(BaseModel):
+    """Full release detail from Discogs API (not from local DB)."""
+
+    discogs_release_id: int
+    title: str
+    artist_name: str
+    year: int | None = None
+    cover_image_url: str | None = None
+    country: str | None = None
+    genres: list[str] = Field(default_factory=list)
+    styles: list[str] = Field(default_factory=list)
+    notes: str | None = None
+    tracks: list[DiscogsTrack] = Field(default_factory=list)
+    labels: list[dict[str, Any]] | None = None
+    formats: list[dict[str, Any]] | None = None
+    format_string: str | None = None
+    in_collection: bool = False
+    collection_release_id: str | None = None
+    discogs_instance_id: int | None = None
+
+
+class CollectionAddResponse(BaseModel):
+    """Response from adding a release to collection."""
+
+    release_id: str = Field(..., description="Local DB UUID")
+    discogs_release_id: int
+    discogs_instance_id: int
+    message: str = "Release added to collection"
+
+
+class CollectionRemoveResponse(BaseModel):
+    """Response from removing a release from collection."""
+
+    discogs_release_id: int
+    message: str = "Release removed from collection"

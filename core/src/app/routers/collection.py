@@ -5,8 +5,12 @@ from typing import Any, cast
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 
-from app.config import Config
-from app.dependencies import get_current_user_id
+from app.dependencies import (
+    Row,
+    get_current_user_id,
+    require_discogs_configured,
+    require_discogs_connected,
+)
 from app.models import PaginatedReleases, Release, ReleaseTracksResponse, SyncSummary
 from app.services.collection import CollectionSyncError, get_collection_service
 from app.supabase import get_supabase
@@ -14,49 +18,6 @@ from app.supabase import get_supabase
 logger = logging.getLogger(__name__)
 
 router = APIRouter()
-
-# Type alias for Supabase row data
-Row = dict[str, Any]
-
-
-def _require_discogs_connected(user_id: str) -> Row:
-    """Get user's Discogs credentials or raise error if not connected.
-
-    Args:
-        user_id: User ID to check
-
-    Returns:
-        User data with Discogs credentials
-
-    Raises:
-        HTTPException: If user not found or Discogs not connected
-    """
-    supabase = get_supabase()
-
-    response = (
-        supabase.table("users")
-        .select("discogs_access_token, discogs_access_token_secret, discogs_username")
-        .eq("id", user_id)
-        .single()
-        .execute()
-    )
-
-    if not response.data:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="User not found",
-        )
-
-    user = cast(Row, response.data)
-    has_token = user.get("discogs_access_token", None)
-    has_secret = user.get("discogs_access_token_secret", None)
-    if not has_token or not has_secret:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Discogs account not connected. Please connect first.",
-        )
-
-    return user
 
 
 @router.post("/sync", response_model=SyncSummary)
@@ -78,13 +39,9 @@ def sync_collection(
     Returns:
         Sync summary with added, updated, removed, and total counts
     """
-    if not Config.is_discogs_configured():
-        raise HTTPException(
-            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-            detail="Discogs integration is not configured",
-        )
+    require_discogs_configured()
 
-    user = _require_discogs_connected(user_id)
+    user = require_discogs_connected(user_id)
     service = get_collection_service()
 
     try:
@@ -241,11 +198,7 @@ def get_release_tracks(
     Returns:
         Release track listing from Discogs
     """
-    if not Config.is_discogs_configured():
-        raise HTTPException(
-            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-            detail="Discogs integration is not configured",
-        )
+    require_discogs_configured()
 
     supabase = get_supabase()
 
@@ -274,7 +227,7 @@ def get_release_tracks(
     release = cast(Row, response.data)
 
     # Get user's Discogs credentials
-    user = _require_discogs_connected(user_id)
+    user = require_discogs_connected(user_id)
 
     # Fetch tracks from Discogs
     try:

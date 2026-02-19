@@ -102,15 +102,13 @@ def mock_db_release():
 class TestCollectionSync:
     """Tests for POST /api/collection/sync endpoint."""
 
-    @patch("app.routers.collection.Config")
-    @patch("app.routers.collection.get_supabase")
+    @patch("app.dependencies.Config")
     @patch("app.routers.collection.get_collection_service")
     @patch("app.dependencies.get_supabase")
     def test_sync_success(
         self,
         mock_dep_supabase,
         mock_get_service,
-        mock_router_supabase,
         mock_config,
         client,
         auth_headers,
@@ -122,19 +120,15 @@ class TestCollectionSync:
         # Mock Discogs configuration
         mock_config.is_discogs_configured.return_value = True
 
-        # Mock auth validation
+        # Mock auth validation + user fetch for Discogs credentials
         mock_dep_client = MagicMock()
         mock_dep_client.auth.get_user.return_value = mock_auth_response
-        mock_dep_supabase.return_value = mock_dep_client
-
-        # Mock user fetch for Discogs credentials
-        mock_router_client = MagicMock()
         mock_user_response = MagicMock()
         mock_user_response.data = mock_user_with_discogs
-        mock_router_client.table.return_value.select.return_value.eq.return_value.single.return_value.execute.return_value = (
+        mock_dep_client.table.return_value.select.return_value.eq.return_value.single.return_value.execute.return_value = (
             mock_user_response
         )
-        mock_router_supabase.return_value = mock_router_client
+        mock_dep_supabase.return_value = mock_dep_client
 
         # Mock collection service
         mock_service = MagicMock()
@@ -165,13 +159,11 @@ class TestCollectionSync:
 
         assert response.status_code == 401
 
-    @patch("app.routers.collection.Config")
-    @patch("app.routers.collection.get_supabase")
+    @patch("app.dependencies.Config")
     @patch("app.dependencies.get_supabase")
     def test_sync_discogs_not_connected(
         self,
         mock_dep_supabase,
-        mock_router_supabase,
         mock_config,
         client,
         auth_headers,
@@ -182,19 +174,15 @@ class TestCollectionSync:
         # Mock Discogs configuration
         mock_config.is_discogs_configured.return_value = True
 
-        # Mock auth validation
+        # Mock auth validation + user fetch - no Discogs tokens
         mock_dep_client = MagicMock()
         mock_dep_client.auth.get_user.return_value = mock_auth_response
-        mock_dep_supabase.return_value = mock_dep_client
-
-        # Mock user fetch - no Discogs tokens
-        mock_router_client = MagicMock()
         mock_user_response = MagicMock()
         mock_user_response.data = mock_user_without_discogs
-        mock_router_client.table.return_value.select.return_value.eq.return_value.single.return_value.execute.return_value = (
+        mock_dep_client.table.return_value.select.return_value.eq.return_value.single.return_value.execute.return_value = (
             mock_user_response
         )
-        mock_router_supabase.return_value = mock_router_client
+        mock_dep_supabase.return_value = mock_dep_client
 
         response = client.post(
             "/api/collection/sync",
@@ -204,7 +192,7 @@ class TestCollectionSync:
         assert response.status_code == 400
         assert "not connected" in response.json()["detail"].lower()
 
-    @patch("app.routers.collection.Config")
+    @patch("app.dependencies.Config")
     @patch("app.dependencies.get_supabase")
     def test_sync_discogs_not_configured(
         self,
@@ -452,7 +440,7 @@ class TestGetRelease:
 class TestGetReleaseTracks:
     """Tests for GET /api/collection/{id}/tracks endpoint."""
 
-    @patch("app.routers.collection.Config")
+    @patch("app.dependencies.Config")
     @patch("app.routers.collection.get_supabase")
     @patch("app.routers.collection.get_collection_service")
     @patch("app.dependencies.get_supabase")
@@ -471,28 +459,26 @@ class TestGetReleaseTracks:
         """Test GET /api/collection/{id}/tracks returns enriched metadata."""
         mock_config.is_discogs_configured.return_value = True
 
-        # Mock auth validation
+        # Mock auth validation + user fetch for Discogs credentials (both in dependencies)
         mock_dep_client = MagicMock()
         mock_dep_client.auth.get_user.return_value = mock_auth_response
-        mock_dep_supabase.return_value = mock_dep_client
-
-        # Mock Supabase - release query and user query
-        mock_router_client = MagicMock()
-
-        # First call: release query, Second call: user query
-        mock_release_response = MagicMock()
-        mock_release_response.data = mock_db_release
-
         mock_user_response = MagicMock()
         mock_user_response.data = mock_user_with_discogs
+        mock_dep_client.table.return_value.select.return_value.eq.return_value.single.return_value.execute.return_value = (
+            mock_user_response
+        )
+        mock_dep_supabase.return_value = mock_dep_client
+
+        # Mock Supabase - release query (still in router)
+        mock_router_client = MagicMock()
+
+        mock_release_response = MagicMock()
+        mock_release_response.data = mock_db_release
 
         # Chain for select().eq().eq().single().execute()
         select_chain = MagicMock()
         select_chain.eq.return_value.eq.return_value.single.return_value.execute.return_value = (
             mock_release_response
-        )
-        select_chain.eq.return_value.single.return_value.execute.return_value = (
-            mock_user_response
         )
         mock_router_client.table.return_value.select.return_value = select_chain
         # Mock update chain for metadata persistence
@@ -550,7 +536,7 @@ class TestGetReleaseTracks:
         assert len(data["tracks"]) == 1
         assert data["tracks"][0]["title"] == "Test Track"
 
-    @patch("app.routers.collection.Config")
+    @patch("app.dependencies.Config")
     @patch("app.routers.collection.get_supabase")
     @patch("app.routers.collection.get_collection_service")
     @patch("app.dependencies.get_supabase")
@@ -569,22 +555,24 @@ class TestGetReleaseTracks:
         """Test tracks endpoint handles missing release data gracefully."""
         mock_config.is_discogs_configured.return_value = True
 
+        # Mock auth validation + user fetch for Discogs credentials (both in dependencies)
         mock_dep_client = MagicMock()
         mock_dep_client.auth.get_user.return_value = mock_auth_response
+        mock_user_response = MagicMock()
+        mock_user_response.data = mock_user_with_discogs
+        mock_dep_client.table.return_value.select.return_value.eq.return_value.single.return_value.execute.return_value = (
+            mock_user_response
+        )
         mock_dep_supabase.return_value = mock_dep_client
 
+        # Mock Supabase - release query (still in router)
         mock_router_client = MagicMock()
         mock_release_response = MagicMock()
         mock_release_response.data = mock_db_release
-        mock_user_response = MagicMock()
-        mock_user_response.data = mock_user_with_discogs
 
         select_chain = MagicMock()
         select_chain.eq.return_value.eq.return_value.single.return_value.execute.return_value = (
             mock_release_response
-        )
-        select_chain.eq.return_value.single.return_value.execute.return_value = (
-            mock_user_response
         )
         mock_router_client.table.return_value.select.return_value = select_chain
         mock_router_supabase.return_value = mock_router_client

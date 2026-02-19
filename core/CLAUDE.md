@@ -8,17 +8,18 @@ Python 3.12, FastAPI, Uvicorn. Package manager: **uv**.
 src/app/
 ├── main.py              # App setup, CORS config, router includes, /health endpoint
 ├── config.py            # Config class with env var validation
-├── dependencies.py      # Auth dependencies (HTTPBearer, get_current_user_id)
-├── models.py            # Pydantic models (User, Release, Playlist, PlaylistTrack, etc.)
+├── dependencies.py      # Auth deps (HTTPBearer, get_current_user_id, require_discogs_*)
+├── models.py            # Pydantic models (User, Release, Playlist, PlaylistTrack, Discogs*, etc.)
 ├── supabase.py          # Supabase client factory
 ├── routers/
 │   ├── users.py         # User profile endpoints (GET/PATCH /api/users/me)
 │   ├── collection.py    # Collection sync/list/detail/tracks endpoints
-│   ├── discogs.py       # Discogs OAuth authorize/callback/disconnect
+│   ├── discogs.py       # Discogs OAuth + search/detail/collect endpoints
 │   └── playlists.py     # Playlist CRUD and track management
 └── services/
     ├── collection.py    # CollectionService — sync logic, Discogs data extraction
     ├── discogs.py       # DiscogsService — OAuth flow, state encryption
+    ├── discogs_search.py # DiscogsSearchService — search + detail with TTLCache
     └── playlists.py     # PlaylistService — playlist CRUD, track operations
 ```
 
@@ -32,6 +33,10 @@ src/app/
 | POST   | `/api/discogs/authorize`               | Initiate Discogs OAuth       |
 | POST   | `/api/discogs/callback`                | Complete Discogs OAuth       |
 | DELETE | `/api/discogs/disconnect`              | Disconnect Discogs account   |
+| GET    | `/api/discogs/search`                  | Search Discogs releases      |
+| GET    | `/api/discogs/releases/{id}`           | Get Discogs release detail   |
+| POST   | `/api/discogs/releases/{id}/collect`   | Add release to collection    |
+| DELETE | `/api/discogs/releases/{id}/collect`   | Remove release from collection|
 | POST   | `/api/collection/sync`                 | Sync Discogs collection      |
 | GET    | `/api/collection`                      | List releases (paginated)    |
 | GET    | `/api/collection/{id}`                 | Get single release           |
@@ -55,7 +60,9 @@ All `/api/*` endpoints require `Authorization: Bearer <jwt-token>` (Supabase JWT
 - **Services** contain business logic (data extraction, OAuth flow, CRUD operations).
 - **Supabase client** handles database operations with RLS enforced at DB level.
 
-**Authentication:** `dependencies.py` provides `get_current_user_id` dependency that validates JWT with Supabase and extracts user ID.
+**Authentication:** `dependencies.py` provides `get_current_user_id` dependency that validates JWT with Supabase and extracts user ID. Also provides `require_discogs_configured()` and `require_discogs_connected(user_id)` shared helpers.
+
+**Caching:** `DiscogsSearchService` uses `cachetools.TTLCache` for Discogs API responses — search results (1h TTL, 500 entries) and release details (24h TTL, 1000 entries).
 
 **CORS:** Configured for `localhost:3000` and `localhost:3001` (configurable via env).
 
@@ -66,6 +73,9 @@ All `/api/*` endpoints require `Authorization: Bearer <jwt-token>` (Supabase JWT
 - **Playlist** — id, user_id, name, description, tags, timestamps
 - **PlaylistTrack** — snapshot data (title, artist, duration, position, track_order, cover_image_url)
 - **PlaylistWithTracks** — Playlist + tracks list + total_duration
+- **DiscogsSearchResult/Response** — Search results from Discogs API
+- **DiscogsReleaseDetail** — Full release detail with in_collection flag, tracks, labels, formats
+- **CollectionAddResponse/RemoveResponse** — Collection add/remove operation results
 
 ## Environment variables
 

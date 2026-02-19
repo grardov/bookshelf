@@ -43,7 +43,7 @@ def auth_headers():
 class TestDiscogsAuthorize:
     """Tests for POST /api/discogs/authorize endpoint."""
 
-    @patch("app.routers.discogs.Config")
+    @patch("app.dependencies.Config")
     @patch("app.routers.discogs.get_discogs_service")
     @patch("app.dependencies.get_supabase")
     def test_authorize_success(
@@ -92,7 +92,7 @@ class TestDiscogsAuthorize:
 
         assert response.status_code == 401
 
-    @patch("app.routers.discogs.Config")
+    @patch("app.dependencies.Config")
     @patch("app.dependencies.get_supabase")
     def test_authorize_discogs_not_configured(
         self,
@@ -123,7 +123,7 @@ class TestDiscogsAuthorize:
 class TestDiscogsCallback:
     """Tests for POST /api/discogs/callback endpoint."""
 
-    @patch("app.routers.discogs.Config")
+    @patch("app.dependencies.Config")
     @patch("app.routers.discogs.get_supabase")
     @patch("app.routers.discogs.get_discogs_service")
     @patch("app.dependencies.get_supabase")
@@ -193,7 +193,7 @@ class TestDiscogsCallback:
 
         assert response.status_code == 401
 
-    @patch("app.routers.discogs.Config")
+    @patch("app.dependencies.Config")
     @patch("app.routers.discogs.get_discogs_service")
     @patch("app.dependencies.get_supabase")
     def test_callback_invalid_state(
@@ -235,7 +235,7 @@ class TestDiscogsCallback:
         assert response.status_code == 400
         assert "expired" in response.json()["detail"].lower()
 
-    @patch("app.routers.discogs.Config")
+    @patch("app.dependencies.Config")
     @patch("app.dependencies.get_supabase")
     def test_callback_validation_empty_verifier(
         self,
