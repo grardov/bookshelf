@@ -84,7 +84,7 @@ components/component-name/
 
 ```bash
 NEXT_PUBLIC_SUPABASE_URL=http://127.0.0.1:54321
-NEXT_PUBLIC_SUPABASE_ANON_KEY=<anon-key>
+NEXT_PUBLIC_SUPABASE_ANON=<anon-key>
 NEXT_PUBLIC_CORE_API_URL=http://localhost:8000
 ```
 
