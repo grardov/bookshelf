@@ -330,6 +330,11 @@ def add_to_collection(
         me = client.identity()
         discogs_release = client.release(discogs_release_id)
         instance = me.collection_folders[0].add_release(discogs_release)
+        if instance is None:
+            raise HTTPException(
+                status_code=status.HTTP_502_BAD_GATEWAY,
+                detail="Discogs did not return an instance for the added release",
+            )
 
         # Fetch full release detail for local storage
         search_service = get_discogs_search_service()

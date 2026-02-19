@@ -132,23 +132,27 @@ class DiscogsSearchService:
         release = client.release(discogs_release_id)
 
         # Extract artists
+        # NOTE: getattr returns Any, avoiding pyright errors with discogs_client's
+        # SimpleField/ListField stubs that lack __iter__/__getitem__ definitions.
         artists = []
-        if hasattr(release, "artists") and release.artists:
-            artists = [a.name for a in release.artists]
+        raw_artists = getattr(release, "artists", None)
+        if raw_artists:
+            artists = [a.name for a in raw_artists]
         artist_name = ", ".join(artists) if artists else "Unknown Artist"
 
         # Extract cover image
         cover_url = None
-        if hasattr(release, "images") and release.images:
+        raw_images = getattr(release, "images", None)
+        if raw_images:
             primary = next(
-                (img for img in release.images if img.get("type") == "primary"),
+                (img for img in raw_images if img.get("type") == "primary"),
                 None,
             )
-            cover_url = primary["uri"] if primary else release.images[0].get("uri")
+            cover_url = primary["uri"] if primary else raw_images[0].get("uri")
 
         # Extract tracks
         tracks = []
-        for track in release.tracklist:
+        for track in getattr(release, "tracklist", []):
             track_artists = artists
             if hasattr(track, "artists") and track.artists:
                 track_artists = [a.name for a in track.artists]
@@ -196,8 +200,12 @@ class DiscogsSearchService:
 
         # Extract year
         year = None
-        if hasattr(release, "year") and release.year and release.year > 0:
-            year = release.year
+        raw_year = getattr(release, "year", None)
+        if raw_year and raw_year > 0:
+            year = raw_year
+
+        raw_genres = getattr(release, "genres", None)
+        raw_styles = getattr(release, "styles", None)
 
         result = {
             "discogs_release_id": release.id,
@@ -206,12 +214,8 @@ class DiscogsSearchService:
             "year": year,
             "cover_image_url": cover_url,
             "country": getattr(release, "country", None),
-            "genres": list(release.genres)
-            if hasattr(release, "genres") and release.genres
-            else [],
-            "styles": list(release.styles)
-            if hasattr(release, "styles") and release.styles
-            else [],
+            "genres": list(raw_genres) if raw_genres else [],
+            "styles": list(raw_styles) if raw_styles else [],
             "notes": full_data.get("notes"),
             "tracks": tracks,
             "labels": labels,
