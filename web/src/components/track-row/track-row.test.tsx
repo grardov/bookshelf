@@ -135,6 +135,43 @@ describe("TrackRow", () => {
     rerender(<TrackRow {...defaultProps} position={10} />);
     expect(screen.getByText("10")).toBeInTheDocument();
   });
+
+  it("applies opacity-0 when isDragging is true", () => {
+    render(<TrackRow {...defaultProps} isDragging />);
+
+    const listItem = screen.getByRole("listitem");
+    expect(listItem).toHaveClass("opacity-0");
+  });
+
+  it("applies cursor-grab when dragListeners are provided", () => {
+    render(<TrackRow {...defaultProps} dragListeners={{}} />);
+
+    const listItem = screen.getByRole("listitem");
+    expect(listItem).toHaveClass("cursor-grab");
+  });
+
+  it("renders drop indicator above when isDropIndicatorAbove is true", () => {
+    render(<TrackRow {...defaultProps} isDropIndicatorAbove />);
+
+    expect(screen.getByTestId("drop-indicator-above")).toBeInTheDocument();
+  });
+
+  it("renders drop indicator below when isDropIndicatorBelow is true", () => {
+    render(<TrackRow {...defaultProps} isDropIndicatorBelow />);
+
+    expect(screen.getByTestId("drop-indicator-below")).toBeInTheDocument();
+  });
+
+  it("does not render drop indicators by default", () => {
+    render(<TrackRow {...defaultProps} />);
+
+    expect(
+      screen.queryByTestId("drop-indicator-above"),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByTestId("drop-indicator-below"),
+    ).not.toBeInTheDocument();
+  });
 });
 
 describe("TrackListHeader", () => {

@@ -28,12 +28,6 @@ describe("SortableTrackRow", () => {
     expect(screen.getByText("5:42")).toBeInTheDocument();
   });
 
-  it("renders drag handle with correct aria label", () => {
-    renderWithDndContext(<SortableTrackRow {...defaultProps} />);
-
-    expect(screen.getByLabelText("Drag to reorder")).toBeInTheDocument();
-  });
-
   it("renders position when provided", () => {
     renderWithDndContext(<SortableTrackRow {...defaultProps} position={3} />);
 

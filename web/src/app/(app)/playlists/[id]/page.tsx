@@ -13,12 +13,15 @@ import {
 } from "lucide-react";
 import {
   DndContext,
+  DragOverlay,
   closestCenter,
   KeyboardSensor,
   PointerSensor,
   useSensor,
   useSensors,
   type DragEndEvent,
+  type DragStartEvent,
+  type DragOverEvent,
 } from "@dnd-kit/core";
 import {
   arrayMove,
@@ -33,7 +36,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Skeleton } from "@/components/ui/skeleton";
-import { TrackListHeader } from "@/components/track-row";
+import { TrackListHeader, TrackRow } from "@/components/track-row";
 import { SortableTrackRow } from "@/components/sortable-track-row";
 import {
   Dialog,
@@ -65,6 +68,8 @@ export default function PlaylistDetailPage() {
   const [isDeleting, setIsDeleting] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [isReordering, setIsReordering] = useState(false);
+  const [activeDragId, setActiveDragId] = useState<string | null>(null);
+  const [overId, setOverId] = useState<string | null>(null);
 
   // DnD sensors
   const sensors = useSensors(
@@ -83,21 +88,32 @@ export default function PlaylistDetailPage() {
   const [editDescription, setEditDescription] = useState("");
   const [editTags, setEditTags] = useState("");
 
-  const fetchPlaylist = useCallback(async () => {
-    setIsLoading(true);
-    try {
-      const data = await getPlaylist(playlistId);
-      setPlaylist(data);
-    } catch (err) {
-      console.error("Failed to fetch playlist:", err);
-      router.push("/playlists");
-    } finally {
-      setIsLoading(false);
-    }
-  }, [playlistId, router]);
+  const fetchPlaylist = useCallback(
+    async (options?: { cancelled?: boolean }) => {
+      setIsLoading(true);
+      try {
+        const data = await getPlaylist(playlistId);
+        if (options?.cancelled) return;
+        setPlaylist(data);
+      } catch (err) {
+        if (options?.cancelled) return;
+        console.error("Failed to fetch playlist:", err);
+        router.push("/playlists");
+      } finally {
+        if (!options?.cancelled) {
+          setIsLoading(false);
+        }
+      }
+    },
+    [playlistId, router],
+  );
 
   useEffect(() => {
-    fetchPlaylist();
+    const signal = { cancelled: false };
+    fetchPlaylist(signal);
+    return () => {
+      signal.cancelled = true;
+    };
   }, [fetchPlaylist]);
 
   const handleEditOpen = () => {
@@ -171,7 +187,23 @@ export default function PlaylistDetailPage() {
     }
   };
 
+  const handleDragStart = (event: DragStartEvent) => {
+    setActiveDragId(event.active.id as string);
+  };
+
+  const handleDragOver = (event: DragOverEvent) => {
+    setOverId((event.over?.id as string) ?? null);
+  };
+
+  const handleDragCancel = () => {
+    setActiveDragId(null);
+    setOverId(null);
+  };
+
   const handleDragEnd = async (event: DragEndEvent) => {
+    setActiveDragId(null);
+    setOverId(null);
+
     const { active, over } = event;
 
     if (!over || active.id === over.id || !playlist) {
@@ -276,6 +308,7 @@ export default function PlaylistDetailPage() {
           <Button
             className="gap-2 rounded-full"
             disabled={playlist.tracks.length === 0}
+            onClick={() => window.open(`/play/${playlist.id}`, "_blank")}
           >
             <Play className="h-4 w-4" aria-hidden="true" />
             Play all
@@ -327,7 +360,6 @@ export default function PlaylistDetailPage() {
             <TrackListHeader
               showAlbum={false}
               showBpm={false}
-              showDragHandle
               showTrackPosition
             />
             <Separator className="mb-1 hidden bg-[#2a2a2a] md:block" />
@@ -335,39 +367,89 @@ export default function PlaylistDetailPage() {
             <DndContext
               sensors={sensors}
               collisionDetection={closestCenter}
+              onDragStart={handleDragStart}
+              onDragOver={handleDragOver}
               onDragEnd={handleDragEnd}
+              onDragCancel={handleDragCancel}
             >
               <SortableContext
                 items={playlist.tracks.map((t) => t.id)}
                 strategy={verticalListSortingStrategy}
               >
                 <ul className="space-y-0.5" role="list">
-                  {playlist.tracks.map((track) => (
-                    <SortableTrackRow
-                      key={track.id}
-                      id={track.id}
-                      position={track.track_order}
-                      trackPosition={track.position}
-                      title={track.title}
-                      artist={track.artist}
-                      duration={track.duration || "--:--"}
-                      coverUrl={track.cover_image_url || undefined}
-                      menuItems={[
-                        {
-                          label: "Remove from playlist",
-                          onClick: () => handleRemoveTrack(track.id),
-                          destructive: true,
-                        },
-                        {
-                          label: "View release",
-                          onClick: () =>
-                            router.push(`/collection/${track.release_id}`),
-                        },
-                      ]}
-                    />
-                  ))}
+                  {playlist.tracks.map((track) => {
+                    const activeIndex = activeDragId
+                      ? playlist.tracks.findIndex((t) => t.id === activeDragId)
+                      : -1;
+                    const overIndex = overId
+                      ? playlist.tracks.findIndex((t) => t.id === overId)
+                      : -1;
+
+                    return (
+                      <SortableTrackRow
+                        key={track.id}
+                        id={track.id}
+                        position={track.track_order}
+                        trackPosition={track.position}
+                        title={track.title}
+                        artist={track.artist}
+                        duration={track.duration || "--:--"}
+                        coverUrl={track.cover_image_url || undefined}
+                        isDropIndicatorAbove={
+                          overId === track.id &&
+                          activeIndex > overIndex &&
+                          activeDragId !== track.id
+                        }
+                        isDropIndicatorBelow={
+                          overId === track.id &&
+                          activeIndex < overIndex &&
+                          activeDragId !== track.id
+                        }
+                        menuItems={[
+                          {
+                            label: "Remove from playlist",
+                            onClick: () => handleRemoveTrack(track.id),
+                            destructive: true,
+                          },
+                          {
+                            label: "View release",
+                            onClick: () =>
+                              router.push(`/collection/${track.release_id}`),
+                          },
+                        ]}
+                      />
+                    );
+                  })}
                 </ul>
               </SortableContext>
+
+              <DragOverlay dropAnimation={null}>
+                {activeDragId
+                  ? (() => {
+                      const activeTrack = playlist.tracks.find(
+                        (t) => t.id === activeDragId,
+                      );
+                      if (!activeTrack) return null;
+                      return (
+                        <div className="rounded-md bg-[#1a1a1a] shadow-lg shadow-black/50">
+                          <ul>
+                            <TrackRow
+                              id={activeTrack.id}
+                              position={activeTrack.track_order}
+                              trackPosition={activeTrack.position}
+                              title={activeTrack.title}
+                              artist={activeTrack.artist}
+                              duration={activeTrack.duration || "--:--"}
+                              coverUrl={
+                                activeTrack.cover_image_url || undefined
+                              }
+                            />
+                          </ul>
+                        </div>
+                      );
+                    })()
+                  : null}
+              </DragOverlay>
             </DndContext>
 
             {isReordering && (

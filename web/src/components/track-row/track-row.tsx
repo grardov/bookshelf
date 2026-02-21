@@ -9,6 +9,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { cn } from "@/lib/utils";
 
 export interface TrackRowProps {
   id: string;
@@ -23,9 +24,24 @@ export interface TrackRowProps {
   coverUrl?: string;
   onPlay?: (id: string) => void;
   menuItems?: { label: string; onClick: () => void; destructive?: boolean }[];
+  /** Whether this row is currently being dragged (hides it in favor of the overlay) */
+  isDragging?: boolean;
+  /** Show a drop indicator line above this row */
+  isDropIndicatorAbove?: boolean;
+  /** Show a drop indicator line below this row */
+  isDropIndicatorBelow?: boolean;
+  /** Drag listeners from useSortable — makes the whole row draggable */
+  dragListeners?: Record<string, unknown>;
+  /** Drag attributes from useSortable (ARIA props) */
+  dragAttributes?: Record<string, unknown>;
+  /** Ref callback for the sortable node */
+  dragRef?: (node: HTMLElement | null) => void;
+  /** Style for drag transform/transition */
+  dragStyle?: React.CSSProperties;
 }
 
 export function TrackRow({
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   id,
   position,
   trackPosition,
@@ -36,11 +52,44 @@ export function TrackRow({
   bpm,
   coverUrl,
   menuItems,
+  isDragging,
+  isDropIndicatorAbove,
+  isDropIndicatorBelow,
+  dragListeners,
+  dragAttributes,
+  dragRef,
+  dragStyle,
 }: TrackRowProps) {
   const hasMenu = menuItems && menuItems.length > 0;
 
   return (
-    <li className="group flex items-center gap-4 rounded-md px-3 py-2.5 transition-colors hover:bg-[#141414]">
+    <li
+      ref={dragRef}
+      style={dragStyle}
+      className={cn(
+        "group relative flex items-center gap-4 rounded-md px-3 py-2.5 transition-colors hover:bg-[#141414]",
+        isDragging && "opacity-0",
+        dragListeners && "cursor-grab active:cursor-grabbing",
+      )}
+      {...dragListeners}
+      {...dragAttributes}
+    >
+      {/* Drop indicator — above */}
+      {isDropIndicatorAbove && (
+        <div
+          className="absolute -top-0.75 left-2 right-2 z-10 h-0.5 rounded-full bg-primary"
+          data-testid="drop-indicator-above"
+        />
+      )}
+
+      {/* Drop indicator — below */}
+      {isDropIndicatorBelow && (
+        <div
+          className="absolute -bottom-0.75 left-2 right-2 z-10 h-0.5 rounded-full bg-primary"
+          data-testid="drop-indicator-below"
+        />
+      )}
+
       {/* Position / Play button */}
       {position !== undefined && (
         <span className="w-8 text-center text-sm text-[#525252]">
@@ -135,15 +184,12 @@ export interface TrackListHeaderProps {
   showBpm?: boolean;
   /** Show track position column (A1, B2) */
   showTrackPosition?: boolean;
-  /** Show drag handle column for sortable lists */
-  showDragHandle?: boolean;
 }
 
 export function TrackListHeader({
   showAlbum = true,
   showBpm = true,
   showTrackPosition = false,
-  showDragHandle = false,
 }: TrackListHeaderProps) {
   return (
     <>
@@ -151,8 +197,6 @@ export function TrackListHeader({
         className="hidden items-center gap-4 px-3 py-2 text-xs font-medium uppercase tracking-wide text-[#525252] md:flex"
         aria-hidden="true"
       >
-        {/* Drag handle spacer */}
-        {showDragHandle && <span className="w-8" />}
         <span className="w-8 text-center">#</span>
         {showTrackPosition && <span className="w-10 text-center">Pos</span>}
         <span className="w-10" />
