@@ -1,0 +1,33 @@
+name: Deploy migrations to prod
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - "db/supabase/migrations/**.sql"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    name: migrate db
+    concurrency: migrate-group-prod
+    env:
+      SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+      SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
+      SUPABASE_PROJECT_ID: ${{ secrets.SUPABASE_PROJECT_ID }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      - name: Install supabase
+        uses: supabase/setup-cli@v1
+      - name: Link project
+        working-directory: ./db
+        run: supabase link --project-ref $SUPABASE_PROJECT_ID
+      - name: Run migrations
+        working-directory: ./db
+        run: supabase db push
