@@ -130,6 +130,7 @@ class TestAddTrackRequest:
             artist="Test Artist",
             duration="6:42",
             cover_image_url=None,
+            release_title="Test Album",
         )
         assert track.title == "Test Track"
         assert track.duration == "6:42"
@@ -143,6 +144,7 @@ class TestAddTrackRequest:
             artist="Artist",
             duration=None,
             cover_image_url=None,
+            release_title=None,
         )
         assert track.duration is None
         assert track.cover_image_url is None
@@ -157,6 +159,7 @@ class TestAddTrackRequest:
                 artist="Artist",
                 duration=None,
                 cover_image_url=None,
+                release_title=None,
             )
 
     def test_empty_artist_rejected(self):
@@ -169,6 +172,7 @@ class TestAddTrackRequest:
                 artist="",
                 duration=None,
                 cover_image_url=None,
+                release_title=None,
             )
 
 

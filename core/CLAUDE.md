@@ -71,7 +71,7 @@ All `/api/*` endpoints require `Authorization: Bearer <jwt-token>` (Supabase JWT
 - **User** — id, email, display_name, avatar_url, discogs_username, discogs_connected_at, timestamps
 - **Release** — 20+ fields including discogs_metadata (JSONB)
 - **Playlist** — id, user_id, name, description, tags, timestamps
-- **PlaylistTrack** — snapshot data (title, artist, duration, position, track_order, cover_image_url)
+- **PlaylistTrack** — snapshot data (title, artist, duration, position, track_order, cover_image_url, release_title)
 - **PlaylistWithTracks** — Playlist + tracks list + total_duration
 - **DiscogsSearchResult/Response** — Search results from Discogs API
 - **DiscogsReleaseDetail** — Full release detail with in_collection flag, tracks, labels, formats

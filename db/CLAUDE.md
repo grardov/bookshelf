@@ -46,7 +46,7 @@ Override ports via root `make config-ports` (see root CLAUDE.md).
 **`public.playlist_tracks`** — track snapshots in playlists
 - `id` (uuid, PK), `playlist_id` (FK → playlists ON DELETE CASCADE)
 - `release_id` (FK → releases ON DELETE CASCADE), `discogs_release_id`
-- `position`, `title`, `artist`, `duration`, `cover_image_url`
+- `position`, `title`, `artist`, `duration`, `cover_image_url`, `release_title`
 - `track_order` (integer, for sorting)
 - `created_at`, `updated_at`
 - Indexes: `playlist_id`, `release_id`, `track_order`
@@ -76,7 +76,7 @@ All tables have RLS enabled. Policies enforce user-scoped access:
 
 ## Migrations
 
-Location: `db/supabase/migrations/` (7 migration files).
+Location: `db/supabase/migrations/` (10 migration files).
 
 Migration files are ordered chronologically with timestamps. Each handles a specific schema change.
 

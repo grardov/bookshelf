@@ -274,6 +274,7 @@ class PlaylistService:
             "artist": track_data["artist"],
             "duration": track_data.get("duration"),
             "cover_image_url": track_data.get("cover_image_url"),
+            "release_title": track_data.get("release_title"),
             "track_order": next_order,
         }
 
