@@ -15,6 +15,7 @@ src/
 │   │   ├── playlists/           # Playlists list + [id] detail with sortable tracks
 │   │   ├── discogs/callback/    # Discogs OAuth callback
 │   │   └── settings/            # User settings
+│   ├── play/[playlistId]/       # Immersive playlist player (no sidebar, opens in new tab)
 │   ├── page.tsx                 # Public landing page
 │   └── globals.css              # Tailwind directives
 ├── components/
@@ -30,10 +31,12 @@ src/
 │   ├── search-result-row/       # Discogs search result row
 │   ├── track-row/               # Track display row
 │   ├── sortable-track-row/      # Draggable track row (dnd-kit)
+│   ├── play-view/               # Immersive playlist player view
 │   ├── sync-button/             # Collection sync button
 │   └── enrichment-badge/        # Metadata enrichment status badge
 ├── contexts/auth-context/       # Auth state: user, profile, session, signOut, refreshProfile
 ├── hooks/
+│   ├── use-dominant-color.ts     # Extract dominant color from image (Canvas API)
 │   ├── use-mobile.ts            # Mobile breakpoint detection
 │   ├── use-search-history.ts    # Discogs search history (localStorage, max 20)
 │   └── use-recently-viewed.ts   # Recently viewed releases (localStorage, max 10)
@@ -70,11 +73,13 @@ components/component-name/
 
 **API client** — `lib/api/client.ts` injects JWT automatically, retries on 401 with session refresh.
 
-**Middleware** — `middleware.ts` refreshes Supabase session on every request. Protected routes: `/create`, `/collection`, `/release`, `/discogs`, `/playlists`, `/settings`.
+**Middleware** — `middleware.ts` refreshes Supabase session on every request. Protected routes: `/create`, `/collection`, `/release`, `/discogs`, `/playlists`, `/play`, `/settings`.
 
 **Drag & drop** — `@dnd-kit/core` + `@dnd-kit/sortable` for reordering playlist tracks.
 
 **Animations** — Framer Motion.
+
+**Gestures** — `@use-gesture/react` for swipe detection in the playlist player.
 
 **UI library** — shadcn/ui (New York style). Add components: `npx shadcn@latest add <component>`.
 

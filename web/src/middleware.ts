@@ -8,6 +8,7 @@ const protectedRoutes = [
   "/release",
   "/discogs",
   "/playlists",
+  "/play",
   "/settings",
 ];
 
