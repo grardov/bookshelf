@@ -20,12 +20,17 @@ describe("createClient", () => {
     process.env = originalEnv;
   });
 
-  it("creates browser client with environment variables", () => {
+  it("creates browser client with environment variables and custom lock", () => {
     createClient();
 
     expect(createBrowserClient).toHaveBeenCalledWith(
       "https://example.supabase.co",
       "test-anon-key",
+      expect.objectContaining({
+        auth: expect.objectContaining({
+          lock: expect.any(Function),
+        }),
+      }),
     );
   });
 

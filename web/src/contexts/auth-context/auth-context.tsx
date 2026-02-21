@@ -67,20 +67,30 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   useEffect(() => {
+    let cancelled = false;
+
     // Get initial session
     const initAuth = async () => {
-      const {
-        data: { session: initialSession },
-      } = await supabase.auth.getSession();
+      try {
+        const {
+          data: { session: initialSession },
+        } = await supabase.auth.getSession();
 
-      setSession(initialSession);
-      setUser(initialSession?.user ?? null);
+        if (cancelled) return;
 
-      if (initialSession?.user) {
-        await fetchProfile(initialSession.user.id);
+        setSession(initialSession);
+        setUser(initialSession?.user ?? null);
+
+        if (initialSession?.user) {
+          await fetchProfile(initialSession.user.id);
+        }
+      } catch (err) {
+        console.error("Failed to initialize auth:", err);
+      } finally {
+        if (!cancelled) {
+          setIsLoading(false);
+        }
       }
-
-      setIsLoading(false);
     };
 
     initAuth();
@@ -89,6 +99,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange(async (event, newSession) => {
+      if (cancelled) return;
+
       setSession(newSession);
       setUser(newSession?.user ?? null);
 
@@ -99,7 +111,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
     });
 
-    return () => subscription.unsubscribe();
+    return () => {
+      cancelled = true;
+      subscription.unsubscribe();
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
