@@ -3,8 +3,6 @@ name: Deploy Core to Fly.io
 on:
   push:
     branches: [main]
-    paths:
-      - "core/**"
   workflow_dispatch:
 
 jobs:
