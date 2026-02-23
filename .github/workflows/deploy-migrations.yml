@@ -24,6 +24,8 @@ jobs:
         uses: actions/checkout@v4
       - name: Install supabase
         uses: supabase/setup-cli@v1
+        with:
+          version: 2.76.13
       - name: Link project
         working-directory: ./db
         run: supabase link --project-ref $SUPABASE_PROJECT_ID
