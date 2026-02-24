@@ -1,5 +1,7 @@
 "use client";
 
+import type { DraggableAttributes } from "@dnd-kit/core";
+import type { SyntheticListenerMap } from "@dnd-kit/core/dist/hooks/utilities";
 import Image from "next/image";
 import { MoreHorizontal, Disc3 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -31,9 +33,9 @@ export interface TrackRowProps {
   /** Show a drop indicator line below this row */
   isDropIndicatorBelow?: boolean;
   /** Drag listeners from useSortable — makes the whole row draggable */
-  dragListeners?: Record<string, unknown>;
+  dragListeners?: SyntheticListenerMap;
   /** Drag attributes from useSortable (ARIA props) */
-  dragAttributes?: Record<string, unknown>;
+  dragAttributes?: DraggableAttributes;
   /** Ref callback for the sortable node */
   dragRef?: (node: HTMLElement | null) => void;
   /** Style for drag transform/transition */

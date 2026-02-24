@@ -11,11 +11,11 @@ export function createClient() {
         // token refresh) across tabs when any single tab holds the lock.
         // This is safe because @supabase/ssr uses cookie-based storage and
         // session refresh is handled server-side by the Next.js middleware.
-        lock: async (
+        lock: async <R,>(
           _name: string,
           _acquireTimeout: number,
-          fn: () => Promise<unknown>,
-        ) => {
+          fn: () => Promise<R>,
+        ): Promise<R> => {
           return await fn();
         },
       },
